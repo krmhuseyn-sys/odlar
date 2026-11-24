@@ -1,0 +1,4 @@
+__pycache__/
+model.pt
+my_llm.zip
+.venv/

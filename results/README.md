@@ -18,3 +18,6 @@ Addım-addım loss və nümunələr: [`odlar1_training_log.csv`](odlar1_training
 - [Data yükləmə və tokenizer](screenshots/01_data_and_tokenizer.png): tokenizer "Bakı", " Azərbaycanın", " paytaxtı" sözlərini bütöv tanıyır, "dır" şəkilçisini ayırır (ekranda byte-level formada görünür: `Ġ` = boşluq, `Ä±` = ı)
 - [Təlim: addım 0–1500](screenshots/02_training_steps_0-1500.png)
 - [Təlim: addım 0–3500](screenshots/03_training_steps_0-3500.png)
+- [Təlim: addım 10500–14500](screenshots/04_training_steps_10500-14500.png)
+- **Addım 10500–14500:** val loss 3.16–3.24 arasında sabitləşir; model öz tutumunun həddinə çatır. Kiçik modellərə xas təkrarlar görünür ("milli milli futbol").
+- Qeyd: 4000–10000 addımlarının logu ekran şəklində yoxdur.

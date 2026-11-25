@@ -26,6 +26,7 @@
 - [Təlim: addım 0–1500](screenshots/02_training_steps_0-1500.png)
 - [Təlim: addım 0–3500](screenshots/03_training_steps_0-3500.png)
 - [Təlim: addım 10500–14500](screenshots/04_training_steps_10500-14500.png)
+- [Lokal sayt (Gradio)](screenshots/05_local_site.png)
 - **Addım 5000:** ilk dəfə rəsmi-sənədli üslubdan kənar, sərbəst cümlə: *"bu günə qədərki bir çox şöhrət və ya siyasi xarakter ilə yanaşı, həm də elmi-tədqiqat işləri davam etdirirdi"*
 - **Addım 9000:** tərcümeyi-hal formatı tam mənimsənilib: *"1956-cı il avqustun 11-də Bakı şəhərində anadan olmuşdur. İbtidai təhsilini burada almış..."*
 - **Addım 10500–15000:** val loss 3.16–3.24 arasında sabitləşir; model öz tutumunun həddinə çatır. Kiçik modellərə xas təkrarlar görünür ("milli milli futbol").

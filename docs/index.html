@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Odlar-1 · Azərbaycan dilində sıfırdan dil modeli</title>
+<title>Odlar · Azərbaycan dilində sıfırdan dil modelləri</title>
 <meta name="description" content="Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş kiçik dil modeli. Tam brauzerində işləyir.">
 <style>
   :root {
@@ -21,6 +21,8 @@
   header h1 { margin: 0; font-size: 40px; letter-spacing: -0.02em; }
   header h1 span { color: var(--fire); }
   header p { margin: 6px 0 0; color: var(--muted); }
+  .pick { margin-top: 14px; display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
+  .pick select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
   .status { margin: 24px 0 16px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
   .bar { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
   .bar i { display: block; height: 100%; width: 0; background: var(--fire); transition: width .2s; }
@@ -61,8 +63,10 @@
 <body>
 <main>
   <header>
-    <h1>Odlar<span>-1</span></h1>
-    <p>Azərbaycan dilində sıfırdan öyrədilmiş kiçik dil modeli. Tamamilə sənin brauzerində işləyir.</p>
+    <h1>Odlar<span id="brand">-1.5</span></h1>
+    <p>Azərbaycan dilində sıfırdan öyrədilmiş kiçik dil modelləri. Tamamilə sənin brauzerində işləyir.</p>
+    <div class="pick"><label for="model">Model</label>
+      <select id="model"><option value="odlar-1.5" selected>Odlar-1.5 · 40M · 49 MB</option><option value="odlar-1">Odlar-1 · 14M · 17 MB</option></select></div>
   </header>
 
   <div class="status" id="status"><span id="statusText">Model yüklənir…</span><div class="bar"><i id="barFill"></i></div></div>
@@ -101,20 +105,16 @@
   </div>
 
   <section class="about">
-    <h2>Odlar-1 nədir?</h2>
-    <p>Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş GPT tipli dil modeli. Model sual-cavab etmir: yazdığın mətni davam etdirir. Heç bir hazır modeldən istifadə olunmayıb, tokenizer də bu data üzərində öyrədilib.</p>
-    <div class="facts">
-      <div><strong>13.8M</strong><span>parametr</span></div>
-      <div><strong>84.6M</strong><span>token Vikipediya mətni</span></div>
-      <div><strong>22 dəq</strong><span>təlim, bir T4 GPU</span></div>
-      <div><strong>17 MB</strong><span>brauzerdə model ölçüsü</span></div>
-    </div>
-    <p class="warn"><b>Diqqət:</b> Odlar qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri və adları tez-tez uydurur. Yazdıqlarını həqiqət kimi qəbul etmə.</p>
-    <p>Model sənin cihazında işləyir: yazdığın mətn heç bir serverə göndərilmir. İlk açılışda 17 MB yüklənir, sonra brauzer onu yadda saxlayır.</p>
+    <h2 id="aboutTitle">Odlar-1.5 nədir?</h2>
+    <p id="aboutText"></p>
+    <p>Modellər sual-cavab etmir: yazdığın mətni davam etdirir. Heç bir hazır modeldən istifadə olunmayıb, tokenizer də bu data üzərində öyrədilib.</p>
+    <div class="facts" id="facts"></div>
+    <p class="warn"><b>Diqqət:</b> Odlar qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri və adları tez-tez uydurur. Real şəxslər, qurumlar və hadisələr haqqında yazdıqları da uydurmadır və heç kimin fikrini əks etdirmir. Yazdıqlarını həqiqət kimi qəbul etmə.</p>
+    <p>Model sənin cihazında işləyir: yazdığın mətn heç bir serverə göndərilmir. Model ilk dəfə seçiləndə yüklənir (17–49 MB), sonra brauzer onu yadda saxlayır.</p>
     <p>Kod, təlim logları və hesabat: <a href="https://github.com/krmhuseyn-sys/odlar">github.com/krmhuseyn-sys/odlar</a></p>
   </section>
 
-  <footer>Odlar-1 · Kərəm Hüseynov · Data: Azərbaycan Vikipediyası (CC BY-SA 4.0)</footer>
+  <footer>Odlar · Kərəm Hüseynov · Data: Azərbaycan Vikipediyası (CC BY-SA 4.0), FineWeb-2 (ODC-By)</footer>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>

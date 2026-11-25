@@ -13,6 +13,12 @@
 
 > Kaggle səhifəni bağlasan təlim dayana bilər. Uzun təlimdə **Save Version → Save & Run All (Commit)** istifadə et: o, arxa planda sona qədər işləyir və nəticəni saxlayır.
 
+## Alternativ: Google Colab-da öyrət
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/krmhuseyn-sys/odlar/blob/main/train_colab.ipynb)
+
+Kaggle-da GPU növbəsi uzun çəkəndə istifadə et. Linki aç, **Runtime → Change runtime type → T4 GPU** seç, sonra **Run all** bas. Model hər 500 addımda Google Drive-a (`MyDrive/Odlar`) yazılır. Sessiya kəsilsə, yenidən **Run all** bas, təlim qaldığı yerdən davam edəcək.
+
 ## 2-ci hissə: VS Code-da lokal sayt
 
 Layihə qovluğu: `C:\Users\Admın\PycharmProjects\Odlar`

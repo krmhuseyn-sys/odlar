@@ -14,7 +14,7 @@ model.load_state_dict(ck["model"])
 model.eval()
 tok = Tokenizer.from_file("tokenizer.json")
 EOT = tok.token_to_id("<|endoftext|>")
-print(f"🔥 Odlar-1 yükləndi: {model.num_params()/1e6:.1f} milyon parametr")
+print(f"Odlar-1 yükləndi: {model.num_params()/1e6:.1f} milyon parametr")
 
 
 def yaz(prompt, uzunluq, temperatur, top_k):
@@ -27,7 +27,7 @@ def yaz(prompt, uzunluq, temperatur, top_k):
 
 
 with gr.Blocks(title="Odlar-1") as demo:
-    gr.Markdown("# 🔥 Odlar-1\n**Odlar yurdunun ilk balaca dil modeli.** Sıfırdan, Azərbaycan dilində öyrədilib. Cümləyə başla, Odlar davam etdirsin.")
+    gr.Markdown("# Odlar-1\n**Odlar yurdunun ilk balaca dil modeli.** Sıfırdan, Azərbaycan dilində öyrədilib. Cümləyə başla, Odlar davam etdirsin.")
     with gr.Row():
         with gr.Column():
             prompt = gr.Textbox(label="Başlanğıc mətn", value="Bakı şəhəri", lines=3)

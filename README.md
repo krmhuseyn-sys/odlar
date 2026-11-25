@@ -1,4 +1,4 @@
-# 🔥 Odlar-1: addım-addım
+# Odlar-1: addım-addım
 
 ## 1-ci hissə: Kaggle-da modeli öyrət (pulsuz GPU)
 
@@ -43,4 +43,4 @@ Model cəmi ~14M parametrdir, 8 GB RAM-da saniyələr içində cavab verir. GPU 
 
 ## Gözlənti
 
-Bu model **sual-cavab etmir**. Mətni davam etdirir, Vikipediya üslubunda Azərbaycan dilində cümlələr yazır. Faktlar tez-tez uydurma olacaq. Bu normaldır, çünki böyük modellər bundan min dəfələrlə çox data və hesablama ilə öyrədilir. Amma bunu sən sıfırdan qurmusan. 🐣
+Bu model **sual-cavab etmir**. Mətni davam etdirir, Vikipediya üslubunda Azərbaycan dilində cümlələr yazır. Faktlar tez-tez uydurma olacaq. Bu normaldır, çünki böyük modellər bundan min dəfələrlə çox data və hesablama ilə öyrədilir. Amma bunu sən sıfırdan qurmusan. 

@@ -17,12 +17,13 @@ EOT = tok.token_to_id("<|endoftext|>")
 print(f"Odlar-1 yükləndi: {model.num_params()/1e6:.1f} milyon parametr")
 
 
-def yaz(prompt, uzunluq, temperatur, top_k):
+def yaz(prompt, uzunluq, temperatur, top_k, tekrar):
     if not prompt.strip():
         return "Bir neçə söz yaz, model davam etdirsin."
     idx = torch.tensor([tok.encode(prompt).ids])
     out = model.generate(idx, max_new_tokens=int(uzunluq), temperature=float(temperatur),
-                         top_k=int(top_k), stop_id=EOT)
+                         top_k=int(top_k), stop_id=EOT,
+                         repetition_penalty=float(tekrar))
     return tok.decode(out[0].tolist())
 
 
@@ -35,10 +36,12 @@ with gr.Blocks(title="Odlar-1") as demo:
             temperatur = gr.Slider(0.1, 1.5, value=0.8, step=0.05,
                                    label="Temperatur (aşağı = ehtiyatlı, yuxarı = yaradıcı)")
             top_k = gr.Slider(1, 200, value=40, step=1, label="Top-k")
+            tekrar = gr.Slider(1.0, 2.0, value=1.3, step=0.05,
+                               label="Təkrar cəzası (1 = söndürülüb, yuxarı = daha az təkrar)")
             btn = gr.Button("Yaz", variant="primary")
         cavab = gr.Textbox(label="Odlar yazır", lines=14)
-    btn.click(yaz, [prompt, uzunluq, temperatur, top_k], cavab)
-    prompt.submit(yaz, [prompt, uzunluq, temperatur, top_k], cavab)
+    btn.click(yaz, [prompt, uzunluq, temperatur, top_k, tekrar], cavab)
+    prompt.submit(yaz, [prompt, uzunluq, temperatur, top_k, tekrar], cavab)
 
 if __name__ == "__main__":
     demo.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True)

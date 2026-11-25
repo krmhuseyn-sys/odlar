@@ -88,12 +88,19 @@ class GPT(nn.Module):
         return logits, loss
 
     @torch.no_grad()
-    def generate(self, idx, max_new_tokens=100, temperature=0.8, top_k=40, stop_id=None):
-        """Hər addımda növbəti tokeni ehtimala görə seçib sona əlavə edir."""
+    def generate(self, idx, max_new_tokens=100, temperature=0.8, top_k=40, stop_id=None,
+                 repetition_penalty=1.0):
+        """Hər addımda növbəti tokeni ehtimala görə seçib sona əlavə edir.
+        repetition_penalty > 1 artıq yazılmış tokenlərin ehtimalını azaldır (təkrarın qarşısını alır)."""
         for _ in range(max_new_tokens):
             ctx = idx[:, -self.config.block_size:]
             logits, _ = self(ctx)
-            logits = logits[:, -1, :] / max(temperature, 1e-5)
+            logits = logits[:, -1, :]
+            if repetition_penalty != 1.0:
+                seen = torch.unique(ctx[0])
+                v = logits[0, seen]
+                logits[0, seen] = torch.where(v > 0, v / repetition_penalty, v * repetition_penalty)
+            logits = logits / max(temperature, 1e-5)
             if top_k:
                 v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
                 logits[logits < v[:, [-1]]] = -float("inf")

@@ -1,0 +1,52 @@
+{
+"Saitlərin ahəngi (cəm şəkilçisi)": [
+["Masanın üstündə kitablar var.", "Masanın üstündə kitabler var."],
+["Kənddə yeni evlər tikilir.", "Kənddə yeni evlar tikilir."],
+["Həyətdə uşaqlar oynayır.", "Həyətdə uşaqlər oynayır."],
+["Şəhərdə yeni məktəblər açılıb.", "Şəhərdə yeni məktəblar açılıb."],
+["Uzaqda uca dağlar görünürdü.", "Uzaqda uca dağlər görünürdü."],
+["Onun gözləri yaşla doldu.", "Onun gözlari yaşla doldu."],
+["Bütün qapılar bağlı idi.", "Bütün qapılər bağlı idi."],
+["Böyük şəhərlər sürətlə böyüyür.", "Böyük şəhərlar sürətlə böyüyür."]
+],
+"Saitlərin ahəngi (yerlik hal)": [
+["Mən Bakıda yaşayıram.", "Mən Bakıdə yaşayıram."],
+["Uşaq məktəbdə oxuyur.", "Uşaq məktəbda oxuyur."],
+["Kitab evdə qaldı.", "Kitab evda qaldı."],
+["Biz yayda kənddə idik.", "Biz yayda kəndda idik."],
+["O, otaqda oturub.", "O, otaqdə oturub."],
+["Pişik bağda gəzir.", "Pişik bağdə gəzir."],
+["Qonaqlar şəhərdə qaldılar.", "Qonaqlar şəhərda qaldılar."],
+["Su stəkanda idi.", "Su stəkandə idi."]
+],
+"Şəxs uzlaşması (feil)": [
+["Mən dünən evə gec gəldim.", "Mən dünən evə gec gəldin."],
+["Sən bu kitabı oxudun?", "Sən bu kitabı oxudum?"],
+["Biz sabah Gəncəyə gedəcəyik.", "Biz sabah Gəncəyə gedəcəksiniz."],
+["Onlar səhər məktəbə getdilər.", "Onlar səhər məktəbə getdik."],
+["Mən hər gün çay içirəm.", "Mən hər gün çay içirsən."],
+["Siz haradan gəlirsiniz?", "Siz haradan gəlirik?"],
+["Biz birlikdə işləyirik.", "Biz birlikdə işləyirəm."],
+["Sən çox yaxşı danışırsan.", "Sən çox yaxşı danışıram."]
+],
+"Yiyəlik birləşməsi (mənsubiyyət şəkilçisi)": [
+["Atamın maşını yenidir.", "Atamın maşın yenidir."],
+["Şəhərin mərkəzi çox gözəldir.", "Şəhərin mərkəz çox gözəldir."],
+["Məktəbin direktoru gəldi.", "Məktəbin direktor gəldi."],
+["Dostumun evi uzaqdır.", "Dostumun ev uzaqdır."],
+["Kəndin yolu dar idi.", "Kəndin yol dar idi."],
+["Qızın adı Leyladır.", "Qızın ad Leyladır."],
+["Dənizin suyu soyuqdur.", "Dənizin su soyuqdur."],
+["Ağacın budağı sındı.", "Ağacın budaq sındı."]
+],
+"Zaman uzlaşması (zərf və feil)": [
+["Dünən güclü yağış yağdı.", "Dünən güclü yağış yağacaq."],
+["Sabah biz kinoya gedəcəyik.", "Sabah biz kinoya getdik."],
+["Keçən il dənizə getdik.", "Keçən il dənizə gedəcəyik."],
+["Gələn həftə imtahan olacaq.", "Gələn həftə imtahan oldu."],
+["İki gün əvvəl məktub gəldi.", "İki gün əvvəl məktub gələcək."],
+["Bir saatdan sonra qatar yola düşəcək.", "Bir saatdan sonra qatar yola düşdü."],
+["Ötən ay yeni ev aldıq.", "Ötən ay yeni ev alacağıq."],
+["Gələn il universitetə daxil olacağam.", "Gələn il universitetə daxil oldum."]
+]
+}

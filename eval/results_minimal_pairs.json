@@ -1,0 +1,38 @@
+{
+ "accuracy": {
+  "Odlar-1": {
+   "Saitlərin ahəngi (cəm şəkilçisi)": 1.0,
+   "Saitlərin ahəngi (yerlik hal)": 1.0,
+   "Şəxs uzlaşması (feil)": 0.625,
+   "Yiyəlik birləşməsi (mənsubiyyət şəkilçisi)": 0.75,
+   "Zaman uzlaşması (zərf və feil)": 0.5
+  },
+  "Odlar-1.5": {
+   "Saitlərin ahəngi (cəm şəkilçisi)": 1.0,
+   "Saitlərin ahəngi (yerlik hal)": 1.0,
+   "Şəxs uzlaşması (feil)": 0.875,
+   "Yiyəlik birləşməsi (mənsubiyyət şəkilçisi)": 1.0,
+   "Zaman uzlaşması (zərf və feil)": 0.5
+  }
+ },
+ "fails": {
+  "Odlar-1": [
+   "Sən bu kitabı oxudun?",
+   "Biz birlikdə işləyirik.",
+   "Sən çox yaxşı danışırsan.",
+   "Kəndin yolu dar idi.",
+   "Ağacın budağı sındı.",
+   "Sabah biz kinoya gedəcəyik.",
+   "Gələn həftə imtahan olacaq.",
+   "Bir saatdan sonra qatar yola düşəcək.",
+   "Gələn il universitetə daxil olacağam."
+  ],
+  "Odlar-1.5": [
+   "Sən bu kitabı oxudun?",
+   "Dünən güclü yağış yağdı.",
+   "Sabah biz kinoya gedəcəyik.",
+   "Bir saatdan sonra qatar yola düşəcək.",
+   "Gələn il universitetə daxil olacağam."
+  ]
+ }
+}

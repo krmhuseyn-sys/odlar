@@ -11,6 +11,7 @@
 
 - Addım-addım loss və nümunələr (31 nöqtə): [`odlar1_training_log.csv`](odlar1_training_log.csv)
 - Colab-ın tam, xam logu: [`odlar1_training_log_full.txt`](odlar1_training_log_full.txt)
+- Son modelin nümunələri və təhlili: [`odlar1_final_samples.md`](odlar1_final_samples.md)
 
 ## Müşahidələr
 - **Addım 0:** təsadüfi söz yığını (val loss 9.05)

@@ -1,5 +1,7 @@
 # Odlar-1: addım-addım
 
+**Canlı demo:** [krmhuseyn-sys.github.io/odlar](https://krmhuseyn-sys.github.io/odlar/). Model tamamilə brauzerdə işləyir (ONNX, 17 MB), server lazım deyil.
+
 ## 1-ci hissə: Kaggle-da modeli öyrət (pulsuz GPU)
 
 1. kaggle.com-da hesab aç və **telefon nömrəni təsdiqlə**. Bu olmadan GPU və internet açılmır.

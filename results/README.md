@@ -12,6 +12,7 @@
 - Addım-addım loss və nümunələr (31 nöqtə): [`odlar1_training_log.csv`](odlar1_training_log.csv)
 - Colab-ın tam, xam logu: [`odlar1_training_log_full.txt`](odlar1_training_log_full.txt)
 - Son modelin nümunələri və təhlili: [`odlar1_final_samples.md`](odlar1_final_samples.md)
+- Odlar-1.5 (40M): [təlim logu](odlar15_training_log_full.txt), [CSV](odlar15_training_log.csv), [nümunələr](odlar15_final_samples.md)
 - "Paytaxt" testi (ehtimallar, Bakı vs Ankara): [`odlar1_paytaxt_testi.md`](odlar1_paytaxt_testi.md)
 
 ## Müşahidələr

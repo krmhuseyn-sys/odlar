@@ -1,6 +1,6 @@
-# Odlar-2 (QARALAMA, hələ öyrədilməyib). ~110M parametr, Llama quruluşu, kontekst 1024.
-# Data balansı hələ dəqiqləşir: bədii ədəbiyyat (books/), forum mətnləri, xəbərlər azaldılır.
-# Təxmini vaxt: Colab T4-də ~30-40 saat (bir neçə sessiya, qaldığı yerdən davam edir).
+# Odlar-2 (QARALAMA, hələ öyrədilməyib). 109.5M parametr, Llama quruluşu, kontekst 1024.
+# Tam plan: "Odlar-2: təlim planı" sənədi. Data balansı pilotdan sonra dəqiqləşəcək.
+# Təxmini vaxt: Kaggle T4x2-də ~28 saat, bir T4-də ~49 saat (qaldığı yerdən davam edir).
 name: odlar2
 model:
   arch: llama
@@ -36,10 +36,10 @@ data:
       repeat: 3
 train:
   batch_size: 16
-  grad_accum: 4          # effektiv batch 64 x 1024 = 65k token/addım
+  grad_accum: 4          # effektiv batch 64 x 1024 = 65 536 token/addım (2 GPU-da grad_accum 2)
   lr: 3.0e-4
   warmup: 1000
-  max_steps: 30000       # ~2 milyard token
+  max_steps: 33500       # 33 500 x 65 536 = ~2.2 milyard token (Chinchilla: 20 token/parametr)
   eval_every: 500
   eval_batches: 20
   sample_prompt: Qış gecəsi idi

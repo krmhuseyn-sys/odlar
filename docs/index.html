@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Odlar-1 · Azərbaycan dilində sıfırdan dil modeli</title>
+<meta name="description" content="Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş kiçik dil modeli. Tam brauzerində işləyir.">
+<style>
+  :root {
+    --bg: #faf8f5; --panel: #ffffff; --ink: #1d1b18; --muted: #6b655c; --line: #e6e0d6;
+    --fire: #c2410c; --fire-soft: #fff1e8; --out: #f6f3ee;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141210; --panel: #1c1916; --ink: #f2ede6; --muted: #a39b8f; --line: #312c26;
+            --fire: #f97316; --fire-soft: #2a1a10; --out: #191613; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 64px; }
+  header h1 { margin: 0; font-size: 40px; letter-spacing: -0.02em; }
+  header h1 span { color: var(--fire); }
+  header p { margin: 6px 0 0; color: var(--muted); }
+  .status { margin: 24px 0 16px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
+  .bar { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 0; background: var(--fire); transition: width .2s; }
+  .status.ready .bar { display: none; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid var(--line); border-radius: 8px;
+             padding: 12px; font: inherit; color: inherit; background: var(--bg); }
+  textarea:focus { outline: 2px solid var(--fire); outline-offset: -1px; }
+  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+  button { font: inherit; border-radius: 8px; padding: 9px 18px; cursor: pointer; border: 1px solid var(--line);
+           background: var(--panel); color: var(--ink); }
+  button.primary { background: var(--fire); border-color: var(--fire); color: #fff; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
+  .chip { font-size: 14px; padding: 5px 12px; border-radius: 999px; background: var(--fire-soft); border-color: transparent; }
+  .output { margin-top: 16px; min-height: 140px; background: var(--out); border-radius: 8px; padding: 14px;
+            white-space: pre-wrap; word-wrap: break-word; }
+  .output b { font-weight: 600; }
+  .output .hint { color: var(--muted); }
+  .meta { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 1em; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 14px; }
+  .set { display: grid; grid-template-columns: 1fr 64px; gap: 4px 12px; align-items: center; margin-top: 10px; font-size: 14px; }
+  .set input { width: 100%; accent-color: var(--fire); }
+  .set output { text-align: right; font-variant-numeric: tabular-nums; }
+  .set small { grid-column: 1 / -1; color: var(--muted); margin: -2px 0 6px; }
+  section.about { margin-top: 36px; font-size: 15px; }
+  section.about h2 { font-size: 18px; margin: 0 0 8px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 14px 0; }
+  .facts div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .facts strong { display: block; font-size: 20px; }
+  .facts span { color: var(--muted); font-size: 13px; }
+  .warn { border-left: 3px solid var(--fire); padding: 4px 0 4px 12px; margin: 14px 0; }
+  a { color: var(--fire); }
+  footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Odlar<span>-1</span></h1>
+    <p>Azərbaycan dilində sıfırdan öyrədilmiş kiçik dil modeli. Tamamilə sənin brauzerində işləyir.</p>
+  </header>
+
+  <div class="status" id="status"><span id="statusText">Model yüklənir…</span><div class="bar"><i id="barFill"></i></div></div>
+
+  <div class="panel">
+    <label for="prompt" style="font-size:14px;color:var(--muted)">Cümləyə başla, Odlar davam etdirsin</label>
+    <textarea id="prompt">Xəzər dənizi</textarea>
+    <div class="row">
+      <button class="primary" id="go" disabled>Yaz</button>
+      <button id="stop" disabled>Dayandır</button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="output" id="output"><span class="hint">Odlar-ın yazdığı mətn burada görünəcək.</span></div>
+    <div class="meta" id="meta"></div>
+
+    <details>
+      <summary>Ayarlar</summary>
+      <div class="set">
+        <label for="len">Neçə token yazsın</label><output id="lenV">100</output>
+        <input type="range" id="len" min="20" max="300" step="10" value="100">
+        <span></span>
+        <label for="temp">Temperatur</label><output id="tempV">0.8</output>
+        <input type="range" id="temp" min="0.1" max="1.5" step="0.05" value="0.8">
+        <span></span>
+        <small>Aşağı: ehtiyatlı və təkrarçı. Yuxarı: yaradıcı, amma qarışıq.</small>
+        <label for="topk">Top-k</label><output id="topkV">40</output>
+        <input type="range" id="topk" min="1" max="200" step="1" value="40">
+        <span></span>
+        <small>Hər addımda neçə ən ehtimallı variant arasından seçilsin.</small>
+        <label for="rep">Təkrar cəzası</label><output id="repV">1.3</output>
+        <input type="range" id="rep" min="1" max="2" step="0.05" value="1.3">
+        <span></span>
+        <small>1 = söndürülüb. Yuxarı = artıq yazılmış sözlər daha az təkrarlanır.</small>
+      </div>
+    </details>
+  </div>
+
+  <section class="about">
+    <h2>Odlar-1 nədir?</h2>
+    <p>Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş GPT tipli dil modeli. Model sual-cavab etmir: yazdığın mətni davam etdirir. Heç bir hazır modeldən istifadə olunmayıb, tokenizer də bu data üzərində öyrədilib.</p>
+    <div class="facts">
+      <div><strong>13.8M</strong><span>parametr</span></div>
+      <div><strong>84.6M</strong><span>token Vikipediya mətni</span></div>
+      <div><strong>22 dəq</strong><span>təlim, bir T4 GPU</span></div>
+      <div><strong>17 MB</strong><span>brauzerdə model ölçüsü</span></div>
+    </div>
+    <p class="warn"><b>Diqqət:</b> Odlar qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri və adları tez-tez uydurur. Yazdıqlarını həqiqət kimi qəbul etmə.</p>
+    <p>Model sənin cihazında işləyir: yazdığın mətn heç bir serverə göndərilmir. İlk açılışda 17 MB yüklənir, sonra brauzer onu yadda saxlayır.</p>
+    <p>Kod, təlim logları və hesabat: <a href="https://github.com/krmhuseyn-sys/odlar">github.com/krmhuseyn-sys/odlar</a></p>
+  </section>
+
+  <footer>Odlar-1 · Kərəm Hüseynov · Data: Azərbaycan Vikipediyası (CC BY-SA 4.0)</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

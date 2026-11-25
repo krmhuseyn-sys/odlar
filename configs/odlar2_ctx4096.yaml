@@ -1,0 +1,17 @@
+# Odlar-2 kontekst uzadılması: 1024 -> 4096 token (RoPE position interpolation).
+# Odlar-2 hazır olandan sonra: qısa əlavə təlim, kiçik öyrənmə sürəti.
+base: odlar2.yaml
+name: odlar2_ctx4096
+model:
+  block_size: 4096
+  rope_scale: 4.0
+data:
+  dir: runs/odlar2/data   # Odlar-2-nin datası təkrar istifadə olunur
+train:
+  init_from: runs/odlar2/model.pt
+  batch_size: 4
+  grad_accum: 4
+  lr: 5.0e-5
+  warmup: 100
+  max_steps: 1500
+  hub_repo: krmhus/odlar-2-ctx4096

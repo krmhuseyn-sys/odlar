@@ -1,0 +1,10 @@
+# Təlim üçün (Colab/Kaggle): pip install -r requirements-train.txt
+torch
+numpy
+tokenizers
+datasets
+pyyaml
+huggingface_hub
+pypdf
+onnx
+onnxruntime

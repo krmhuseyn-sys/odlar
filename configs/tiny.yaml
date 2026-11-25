@@ -1,0 +1,29 @@
+# Sınaq: GPU-suz, bir neçə dəqiqəyə işləyir. İş masasının düzgün qurulduğunu yoxlamaq üçün.
+#   python -m odlar.train configs/tiny.yaml
+name: tiny
+model:
+  arch: llama
+  block_size: 128
+  n_layer: 2
+  n_head: 4
+  n_embd: 128
+  dropout: 0.0
+data:
+  vocab_size: 2000
+  tok_train_chars: 5000000
+  val_frac: 0.05
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      max_chars: 5000000
+      min_chars: 200
+train:
+  batch_size: 16
+  lr: 2.0e-3
+  warmup: 20
+  max_steps: 300
+  eval_every: 100
+  eval_batches: 10
+  sample_prompt: Bakı

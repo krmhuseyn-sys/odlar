@@ -1,48 +1,36 @@
-# Odlar-1: addım-addım
+# Odlar
 
-**Canlı demo:** [krmhuseyn-sys.github.io/odlar](https://krmhuseyn-sys.github.io/odlar/). Odlar-1 və Odlar-1.5 tamamilə brauzerdə işləyir (ONNX int8, 17 və 49 MB), server lazım deyil.
+Azərbaycan dilində **sıfırdan** öyrədilmiş dil modelləri. Hazır modelin üzərində yox: tokenizer, model və təlim tamamilə bu repodadır, pulsuz GPU ilə (Colab, Kaggle).
 
-## 1-ci hissə: Kaggle-da modeli öyrət (pulsuz GPU)
+**Canlı demo:** [krmhuseyn-sys.github.io/odlar](https://krmhuseyn-sys.github.io/odlar/). Modellər tamamilə brauzerdə işləyir (ONNX int8), server lazım deyil.
 
-1. kaggle.com-da hesab aç və **telefon nömrəni təsdiqlə**. Bu olmadan GPU və internet açılmır.
-2. **Create → New Notebook**, sonra **File → Import Notebook** → `train_kaggle.ipynb` faylını seç.
-3. Sağ paneldə **Session options**:
-   - Accelerator: **GPU T4 x2** (və ya P100)
-   - Internet: **On**
-4. **Run All** düyməsini bas. Təlim təxminən 1–2.5 saat çəkir. Hər 500 addımda model nümunə cümlə yazır: əvvəl qarışıq olacaq, sonra get-gedə daha düzgün cümlələr çıxacaq.
-   - `val` rəqəmi azalırsa, model öyrənir. 5-dən başlayıb 3-ə yaxın və ya daha aşağı düşməlidir.
-5. Bitəndə sağdakı **Output** bölməsindən `my_llm.zip` faylını endir.
+| Model | Parametr | Kontekst | Data | BPC (az = yaxşı) | Qrammatika |
+|---|---|---|---|---|---|
+| Odlar-1 | 13.8M | 256 | Vikipediya | 1.543 | 31/40 |
+| Odlar-1.5 | 40.0M | 512 | Vikipediya + FineWeb-2 | 1.224 | 35/40 |
+| Odlar-2 | ~110M | 1024 | + bədii ədəbiyyat | hazırlanır | |
 
-> Kaggle səhifəni bağlasan təlim dayana bilər. Uzun təlimdə **Save Version → Save & Run All (Commit)** istifadə et: o, arxa planda sona qədər işləyir və nəticəni saxlayır.
+Ətraflı nəticələr: [results/meqale_ucun_neticeler.md](results/meqale_ucun_neticeler.md)
 
-## Alternativ: Google Colab-da öyrət
+## Model öyrətmək
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/krmhuseyn-sys/odlar/blob/main/train_colab.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/krmhuseyn-sys/odlar/blob/main/notebooks/train.ipynb)
 
-Kaggle-da GPU növbəsi uzun çəkəndə istifadə et. Linki aç, **Runtime → Change runtime type → T4 GPU** seç, sonra **Run all** bas. Model hər 500 addımda Google Drive-a (`MyDrive/Odlar`) yazılır. Sessiya kəsilsə, yenidən **Run all** bas, təlim qaldığı yerdən davam edəcək.
+1. Linki aç, **Runtime → Change runtime type → T4 GPU** seç.
+2. İlk xanada `CONFIG`-i seç (`configs/odlar15.yaml` və s.).
+3. **Runtime → Run all**. Model hər 500 addımda Google Drive-a (`MyDrive/Odlar/runs/...`) yazılır. Sessiya kəsilsə, yenidən **Run all**: qaldığı yerdən davam edir.
 
-## 2-ci hissə: VS Code-da lokal sayt
+İş masasının quruluşu, komandalar və config yazmaq qaydası: **[MODELS.md](MODELS.md)**.
 
-Layihə qovluğu: `C:\Users\Admın\PycharmProjects\Odlar`
-
-1. VS Code-da **File → Open Folder** seç və `Odlar` qovluğunu aç. Sol paneldə **Extensions** (Ctrl+Shift+X) bölməsinə keç və **Python** əlavəsini (Microsoft) quraşdır, əgər yoxdursa.
-2. Kaggle-dan endirdiyin `my_llm.zip`-i aç və içindəki `model.pt` və `tokenizer.json` fayllarını bu qovluğa at. `model.py` artıq burada var.
-3. VS Code-da terminal aç (**Ctrl + `**) və bir dəfə bu əmri işlət:
+## Lokal sayt (kompüterdə)
 
 ```
 pip install -r requirements.txt
+python app.py
 ```
 
-4. `app.py` faylını aç və sağ yuxarıdakı ▶ (**Run Python File**) düyməsini bas. Brauzerdə **http://localhost:7860** açılacaq.
-
-Model cəmi ~14M parametrdir, 8 GB RAM-da saniyələr içində cavab verir. GPU lazım deyil.
-
-## Ayarlarla oynamaq
-
-- **Temperatur:** 0.5 seçsən, model daha ehtiyatlı və təkrarlanan mətn yazır. 1.2 seçsən, daha yaradıcı, amma daha "dəli" mətn yazır.
-- **Daha ağıllı model:** notebook-un ilk xanasında `N_LAYER, N_HEAD, N_EMBD = 8, 8, 512` və `MAX_STEPS = 30_000` et. Model ~30M parametr olacaq, təlim daha uzun çəkəcək.
-- **Başqa data:** "2) Data" xanasında `texts` siyahısını öz mətnlərinlə əvəz et (kitablar, xəbərlər və s.).
+Qovluqda `odlar/` (kod), `model.pt` + `tokenizer.json` (Odlar-1) və `odlar15/model.pt` + `odlar15/tokenizer.json` (Odlar-1.5) olmalıdır. Brauzer özü açılır. GPU lazım deyil.
 
 ## Gözlənti
 
-Bu model **sual-cavab etmir**. Mətni davam etdirir, Vikipediya üslubunda Azərbaycan dilində cümlələr yazır. Faktlar tez-tez uydurma olacaq. Bu normaldır, çünki böyük modellər bundan min dəfələrlə çox data və hesablama ilə öyrədilir. Amma bunu sən sıfırdan qurmusan. 
+Bu modellər **sual-cavab etmir**: yazdığın mətni davam etdirir. Qrammatikanı yaxşı bilir, faktları bilmir: yerləri, tarixləri, adları uydurur. Növbəti mərhələ, söhbət modeli Simurq, bunun üzərində qurulacaq.

@@ -2,3 +2,4 @@ torch
 gradio
 tokenizers
 numpy
+pyyaml

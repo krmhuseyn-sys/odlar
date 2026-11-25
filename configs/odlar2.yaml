@@ -1,0 +1,46 @@
+# Odlar-2 (QARALAMA, hələ öyrədilməyib). ~110M parametr, Llama quruluşu, kontekst 1024.
+# Data balansı hələ dəqiqləşir: bədii ədəbiyyat (books/), forum mətnləri, xəbərlər azaldılır.
+# Təxmini vaxt: Colab T4-də ~30-40 saat (bir neçə sessiya, qaldığı yerdən davam edir).
+name: odlar2
+model:
+  arch: llama
+  block_size: 1024
+  n_layer: 12
+  n_head: 12
+  n_embd: 768
+  dropout: 0.0
+  rope_theta: 10000.0
+data:
+  vocab_size: 32000
+  tok_train_chars: 800000000
+  val_frac: 0.01
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      max_chars: 300000000
+      min_chars: 200
+      repeat: 2
+    - type: hf
+      label: fineweb2
+      path: HuggingFaceFW/fineweb-2
+      name: azj_Latn
+      streaming: true
+      max_chars: 2000000000
+      min_chars: 300
+    - type: files
+      label: bedii
+      glob: books/**/*.txt
+      min_chars: 1000
+      repeat: 3
+train:
+  batch_size: 16
+  grad_accum: 4          # effektiv batch 64 x 1024 = 65k token/addım
+  lr: 3.0e-4
+  warmup: 1000
+  max_steps: 30000       # ~2 milyard token
+  eval_every: 500
+  eval_batches: 20
+  sample_prompt: Qış gecəsi idi
+  hub_repo: krmhus/odlar-2

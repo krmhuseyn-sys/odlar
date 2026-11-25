@@ -1,0 +1,27 @@
+# Odlar-1: ilk model (noyabr 2026). 13.8M parametr, yalnız Azərbaycan Vikipediyası.
+# Nəticə: val loss 3.156, BPC 1.543 (bax results/meqale_ucun_neticeler.md)
+name: odlar1
+model:
+  arch: gpt2
+  block_size: 256
+  n_layer: 6
+  n_head: 6
+  n_embd: 384
+  dropout: 0.1
+data:
+  vocab_size: 8000
+  tok_train_chars: 300000000
+  val_frac: 0.05
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      max_chars: 300000000
+      min_chars: 200
+train:
+  batch_size: 32
+  lr: 6.0e-4
+  max_steps: 15000
+  eval_every: 500
+  sample_prompt: Azərbaycan

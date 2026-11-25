@@ -1,7 +1,7 @@
 """Odlar: lokal veb sayt (Odlar-1 və Odlar-1.5).
 Lokal:  python app.py   ->  brauzer özü açılır (adətən http://127.0.0.1:7860)
 
-Fayllar:
+Lazımdır: odlar/ qovluğu (model kodu). Fayllar:
   Odlar-1:    model.pt, tokenizer.json               (bu qovluqda)
   Odlar-1.5:  odlar15/model.pt, odlar15/tokenizer.json
 Hansı model tapılmasa, siyahıda görünmür.
@@ -10,7 +10,7 @@ import os
 import torch
 import gradio as gr
 from tokenizers import Tokenizer
-from model import GPT, GPTConfig
+from odlar.model import load_checkpoint
 
 ON_SPACES = bool(os.environ.get("SPACE_ID"))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -32,10 +32,7 @@ def yukle(ad):
     """Modeli ilk dəfə lazım olanda yükləyir, sonra yaddaşda saxlayır."""
     if ad not in _yaddas:
         mpath, tpath = MODELLER[ad]
-        ck = torch.load(mpath, map_location="cpu", weights_only=True)
-        model = GPT(GPTConfig(**ck["config"]))
-        model.load_state_dict(ck["model"])
-        model.float().eval()
+        model = load_checkpoint(mpath)
         tok = Tokenizer.from_file(tpath)
         _yaddas[ad] = (model, tok, tok.token_to_id("<|endoftext|>"))
         print(f"{ad} yükləndi: {model.num_params()/1e6:.1f} milyon parametr")

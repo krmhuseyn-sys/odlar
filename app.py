@@ -1,6 +1,10 @@
-"""Odlar-1: veb sayt (lokal və Hugging Face Spaces).
-Lokal:  python app.py   →  brauzerdə http://localhost:7860
-Bu qovluqda model.py, model.pt və tokenizer.json olmalıdır.
+"""Odlar: lokal veb sayt (Odlar-1 və Odlar-1.5).
+Lokal:  python app.py   ->  brauzer özü açılır (adətən http://127.0.0.1:7860)
+
+Fayllar:
+  Odlar-1:    model.pt, tokenizer.json               (bu qovluqda)
+  Odlar-1.5:  odlar15/model.pt, odlar15/tokenizer.json
+Hansı model tapılmasa, siyahıda görünmür.
 """
 import os
 import torch
@@ -9,41 +13,63 @@ from tokenizers import Tokenizer
 from model import GPT, GPTConfig
 
 ON_SPACES = bool(os.environ.get("SPACE_ID"))
+HERE = os.path.dirname(os.path.abspath(__file__))
 
-ck = torch.load("model.pt", map_location="cpu", weights_only=True)
-model = GPT(GPTConfig(**ck["config"]))
-model.load_state_dict(ck["model"])
-model.eval()
-tok = Tokenizer.from_file("tokenizer.json")
-EOT = tok.token_to_id("<|endoftext|>")
-print(f"Odlar-1 yükləndi: {model.num_params()/1e6:.1f} milyon parametr")
+MODELLER = {
+    "Odlar-1.5 (40M)": ("odlar15/model.pt", "odlar15/tokenizer.json"),
+    "Odlar-1 (14M)": ("model.pt", "tokenizer.json"),
+}
+MODELLER = {ad: (os.path.join(HERE, m), os.path.join(HERE, t))
+            for ad, (m, t) in MODELLER.items()
+            if os.path.exists(os.path.join(HERE, m)) and os.path.exists(os.path.join(HERE, t))}
+if not MODELLER:
+    raise SystemExit("Heç bir model tapılmadı: model.pt və tokenizer.json lazımdır.")
+
+_yaddas = {}
 
 
-def yaz(prompt, uzunluq, temperatur, top_k, tekrar):
+def yukle(ad):
+    """Modeli ilk dəfə lazım olanda yükləyir, sonra yaddaşda saxlayır."""
+    if ad not in _yaddas:
+        mpath, tpath = MODELLER[ad]
+        ck = torch.load(mpath, map_location="cpu", weights_only=True)
+        model = GPT(GPTConfig(**ck["config"]))
+        model.load_state_dict(ck["model"])
+        model.float().eval()
+        tok = Tokenizer.from_file(tpath)
+        _yaddas[ad] = (model, tok, tok.token_to_id("<|endoftext|>"))
+        print(f"{ad} yükləndi: {model.num_params()/1e6:.1f} milyon parametr")
+    return _yaddas[ad]
+
+
+def yaz(ad, prompt, uzunluq, temperatur, top_k, tekrar):
     if not prompt.strip():
         return "Bir neçə söz yaz, model davam etdirsin."
+    model, tok, eot = yukle(ad)
     idx = torch.tensor([tok.encode(prompt).ids[-model.config.block_size:]])
     out = model.generate(idx, max_new_tokens=int(uzunluq), temperature=float(temperatur),
-                         top_k=int(top_k), stop_id=EOT,
+                         top_k=int(top_k), stop_id=eot,
                          repetition_penalty=float(tekrar))
     return tok.decode(out[0].tolist())
 
 
 HAQQINDA = """
-**Odlar-1 nədir?** Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş 13.8 milyon parametrli kiçik GPT modeli.
-Sual-cavab etmir, yazdığın cümləni davam etdirir.
+**Odlar nədir?** Azərbaycan dilində sıfırdan öyrədilmiş kiçik GPT modelləri.
+Odlar-1: 13.8 milyon parametr, yalnız Vikipediya. Odlar-1.5: 40 milyon parametr, Vikipediya və veb mətnləri.
+Sual-cavab etmirlər, yazdığın cümləni davam etdirirlər.
 
-**Diqqət:** model qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri və adları tez-tez uydurur.
-Yazdıqlarını həqiqət kimi qəbul etmə.
+**Diqqət:** modellər qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri, adları və hadisələri
+tez-tez uydururlar. Real şəxslər və qurumlar haqqında yazdıqları da uydurmadır.
 
-Kod və təlim nəticələri: [github.com/krmhuseyn-sys/odlar](https://github.com/krmhuseyn-sys/odlar)
+Kod və nəticələr: [github.com/krmhuseyn-sys/odlar](https://github.com/krmhuseyn-sys/odlar)
 """
 
-with gr.Blocks(title="Odlar-1") as demo:
-    gr.Markdown("# Odlar-1\n**Odlar yurdunun ilk balaca dil modeli.** Sıfırdan, Azərbaycan dilində öyrədilib. "
+with gr.Blocks(title="Odlar") as demo:
+    gr.Markdown("# Odlar\n**Odlar yurdunun balaca dil modelləri.** Sıfırdan, Azərbaycan dilində öyrədilib. "
                 "Cümləyə başla, Odlar davam etdirsin.")
     with gr.Row():
         with gr.Column():
+            secim = gr.Dropdown(list(MODELLER), value=list(MODELLER)[0], label="Model")
             prompt = gr.Textbox(label="Başlanğıc mətn", value="Xəzər dənizi", lines=3)
             btn = gr.Button("Yaz", variant="primary")
             with gr.Accordion("Ayarlar", open=False):
@@ -54,15 +80,17 @@ with gr.Blocks(title="Odlar-1") as demo:
                 tekrar = gr.Slider(1.0, 2.0, value=1.3, step=0.05,
                                    label="Təkrar cəzası (1 = söndürülüb, yuxarı = daha az təkrar)")
         cavab = gr.Textbox(label="Odlar yazır", lines=14)
-    gr.Examples(["Xəzər dənizi", "Qədim zamanlarda", "Azərbaycan mətbəxi", "Futbol üzrə",
-                 "Azərbaycanın paytaxtı"], inputs=prompt, label="Nümunələr")
+    gr.Examples(["Xəzər dənizi", "Qədim zamanlarda", "Azərbaycan mətbəxi", "Qış gecəsi idi",
+                 "Kür çayı", "Azərbaycanın paytaxtı"], inputs=prompt, label="Nümunələr")
     gr.Markdown(HAQQINDA)
-    inputs = [prompt, uzunluq, temperatur, top_k, tekrar]
+    inputs = [secim, prompt, uzunluq, temperatur, top_k, tekrar]
     btn.click(yaz, inputs, cavab)
     prompt.submit(yaz, inputs, cavab)
 
 if __name__ == "__main__":
+    yukle(list(MODELLER)[0])
     if ON_SPACES:
         demo.launch()
     else:
-        demo.launch(server_name="127.0.0.1", server_port=7860, inbrowser=True)
+        # server_port=None: 7860 məşğuldursa, Gradio özü növbəti boş portu tapır
+        demo.launch(server_name="127.0.0.1", server_port=None, inbrowser=True)

@@ -2,121 +2,130 @@
 <html lang="az">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Odlar · Azərbaycan dilində sıfırdan dil modelləri</title>
-<meta name="description" content="Azərbaycan Vikipediyası üzərində sıfırdan öyrədilmiş kiçik dil modeli. Tam brauzerində işləyir.">
-<style>
-  :root {
-    --bg: #faf8f5; --panel: #ffffff; --ink: #1d1b18; --muted: #6b655c; --line: #e6e0d6;
-    --fire: #c2410c; --fire-soft: #fff1e8; --out: #f6f3ee;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #141210; --panel: #1c1916; --ink: #f2ede6; --muted: #a39b8f; --line: #312c26;
-            --fire: #f97316; --fire-soft: #2a1a10; --out: #191613; }
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink);
-         font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  main { max-width: 760px; margin: 0 auto; padding: 40px 20px 64px; }
-  header h1 { margin: 0; font-size: 40px; letter-spacing: -0.02em; }
-  header h1 span { color: var(--fire); }
-  header p { margin: 6px 0 0; color: var(--muted); }
-  .pick { margin-top: 14px; display: flex; gap: 10px; align-items: center; font-size: 14px; color: var(--muted); }
-  .pick select { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; }
-  .status { margin: 24px 0 16px; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; }
-  .bar { flex: 1; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
-  .bar i { display: block; height: 100%; width: 0; background: var(--fire); transition: width .2s; }
-  .status.ready .bar { display: none; }
-  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
-  textarea { width: 100%; min-height: 72px; resize: vertical; border: 1px solid var(--line); border-radius: 8px;
-             padding: 12px; font: inherit; color: inherit; background: var(--bg); }
-  textarea:focus { outline: 2px solid var(--fire); outline-offset: -1px; }
-  .row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
-  button { font: inherit; border-radius: 8px; padding: 9px 18px; cursor: pointer; border: 1px solid var(--line);
-           background: var(--panel); color: var(--ink); }
-  button.primary { background: var(--fire); border-color: var(--fire); color: #fff; font-weight: 600; }
-  button:disabled { opacity: .45; cursor: default; }
-  .chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; }
-  .chip { font-size: 14px; padding: 5px 12px; border-radius: 999px; background: var(--fire-soft); border-color: transparent; }
-  .output { margin-top: 16px; min-height: 140px; background: var(--out); border-radius: 8px; padding: 14px;
-            white-space: pre-wrap; word-wrap: break-word; }
-  .output b { font-weight: 600; }
-  .output .hint { color: var(--muted); }
-  .meta { font-size: 13px; color: var(--muted); margin-top: 8px; min-height: 1em; }
-  details { margin-top: 12px; }
-  summary { cursor: pointer; color: var(--muted); font-size: 14px; }
-  .set { display: grid; grid-template-columns: 1fr 64px; gap: 4px 12px; align-items: center; margin-top: 10px; font-size: 14px; }
-  .set input { width: 100%; accent-color: var(--fire); }
-  .set output { text-align: right; font-variant-numeric: tabular-nums; }
-  .set small { grid-column: 1 / -1; color: var(--muted); margin: -2px 0 6px; }
-  section.about { margin-top: 36px; font-size: 15px; }
-  section.about h2 { font-size: 18px; margin: 0 0 8px; }
-  .facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin: 14px 0; }
-  .facts div { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-  .facts strong { display: block; font-size: 20px; }
-  .facts span { color: var(--muted); font-size: 13px; }
-  .warn { border-left: 3px solid var(--fire); padding: 4px 0 4px 12px; margin: 14px 0; }
-  a { color: var(--fire); }
-  footer { margin-top: 40px; font-size: 13px; color: var(--muted); }
-</style>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Odlar: Azərbaycan dilində sıfırdan dil modelləri</title>
+<meta name="description" content="Azərbaycan dilində sıfırdan öyrədilmiş kiçik dil modelləri. Tamamilə brauzerində işləyir.">
+<meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#12162A" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'%3E%3Cpath fill='%23A6243A' d='M11 31.5C5.5 31.5 2 27.6 2 22.4 2 15.8 7.6 12.4 10.6 7.6 12 5.4 12.4 3 11.6.5c5 2 8.6 6.4 8.6 11.6 0 2.9-1.3 5-3.2 6.5 2.4 1.2 4 3.6 4 6.4 0 3.8-4.3 6.5-10 6.5z'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;1,7..72,400&family=Onest:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script>
+  try { const t = JSON.parse(localStorage.getItem("odlar.theme")); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Odlar<span id="brand">-1.5</span></h1>
-    <p>Azərbaycan dilində sıfırdan öyrədilmiş kiçik dil modelləri. Tamamilə sənin brauzerində işləyir.</p>
-    <div class="pick"><label for="model">Model</label>
-      <select id="model"><option value="odlar-1.5" selected>Odlar-1.5 · 40M · 49 MB</option><option value="odlar-1">Odlar-1 · 14M · 17 MB</option></select></div>
-  </header>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="buta" viewBox="0 0 24 32">
+    <path d="M11 31.5C5.5 31.5 2 27.6 2 22.4 2 15.8 7.6 12.4 10.6 7.6 12 5.4 12.4 3 11.6.5c5 2 8.6 6.4 8.6 11.6 0 2.9-1.3 5-3.2 6.5 2.4 1.2 4 3.6 4 6.4 0 3.8-4.3 6.5-10 6.5z" fill="var(--nar)"/>
+    <path d="M10.6 27.4c-2.6 0-4.3-1.8-4.3-4.3 0-3 2.4-4.8 4.2-7 .3 1.6 1.5 2.7 3 3.6 1.4.9 2.3 2.2 2.3 3.6 0 2.4-2.2 4.1-5.2 4.1z" fill="var(--saffron)"/>
+  </symbol>
+</svg>
 
-  <div class="status" id="status"><span id="statusText">Model yüklənir…</span><div class="bar"><i id="barFill"></i></div></div>
-
-  <div class="panel">
-    <label for="prompt" style="font-size:14px;color:var(--muted)">Cümləyə başla, Odlar davam etdirsin</label>
-    <textarea id="prompt">Xəzər dənizi</textarea>
-    <div class="row">
-      <button class="primary" id="go" disabled>Yaz</button>
-      <button id="stop" disabled>Dayandır</button>
+<div class="app" id="app">
+  <aside class="side" id="side" aria-label="Mətnlər">
+    <div class="side-top">
+      <a class="brand" href="./" aria-label="Odlar, əsas səhifə">
+        <svg class="buta" aria-hidden="true"><use href="#buta"/></svg>
+        <span>Odlar</span>
+      </a>
+      <button class="icon-btn only-mobile" id="closeSide" aria-label="Menyunu bağla">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg>
+      </button>
     </div>
-    <div class="chips" id="chips"></div>
-    <div class="output" id="output"><span class="hint">Odlar-ın yazdığı mətn burada görünəcək.</span></div>
-    <div class="meta" id="meta"></div>
+    <button class="new-btn" id="newChat">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>
+      Yeni mətn
+    </button>
+    <nav class="history" id="history" aria-label="Əvvəlki mətnlər"></nav>
+    <div class="side-foot">
+      <button class="link-btn" id="openAbout">Odlar haqqında</button>
+      <a class="link-btn" href="https://github.com/krmhuseyn-sys/odlar" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
 
-    <details>
-      <summary>Ayarlar</summary>
-      <div class="set">
-        <label for="len">Neçə token yazsın</label><output id="lenV">100</output>
-        <input type="range" id="len" min="20" max="300" step="10" value="100">
-        <span></span>
-        <label for="temp">Temperatur</label><output id="tempV">0.8</output>
-        <input type="range" id="temp" min="0.1" max="1.5" step="0.05" value="0.8">
-        <span></span>
-        <small>Aşağı: ehtiyatlı və təkrarçı. Yuxarı: yaradıcı, amma qarışıq.</small>
-        <label for="topk">Top-k</label><output id="topkV">40</output>
-        <input type="range" id="topk" min="1" max="200" step="1" value="40">
-        <span></span>
-        <small>Hər addımda neçə ən ehtimallı variant arasından seçilsin.</small>
-        <label for="rep">Təkrar cəzası</label><output id="repV">1.3</output>
-        <input type="range" id="rep" min="1" max="2" step="0.05" value="1.3">
-        <span></span>
-        <small>1 = söndürülüb. Yuxarı = artıq yazılmış sözlər daha az təkrarlanır.</small>
+  <main class="main">
+    <header class="top">
+      <button class="icon-btn only-mobile" id="openSide" aria-label="Menyunu aç">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14"/></svg>
+      </button>
+      <div class="picker">
+        <button class="picker-btn" id="pickerBtn" aria-haspopup="listbox" aria-expanded="false">
+          <span id="pickerName">Odlar-1.5</span>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8l4 4 4-4"/></svg>
+        </button>
+        <ul class="picker-menu" id="pickerMenu" role="listbox" aria-label="Model seç" hidden></ul>
       </div>
-    </details>
-  </div>
+      <button class="icon-btn" id="themeBtn" aria-label="Rəng temasını dəyiş">
+        <svg class="sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.5"/><path d="M10 1.5v2M10 16.5v2M1.5 10h2M16.5 10h2M4 4l1.4 1.4M14.6 14.6L16 16M4 16l1.4-1.4M14.6 5.4L16 4"/></svg>
+        <svg class="moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16.5 12.5A7 7 0 017.5 3.5a7 7 0 109 9z"/></svg>
+      </button>
+    </header>
 
-  <section class="about">
-    <h2 id="aboutTitle">Odlar-1.5 nədir?</h2>
-    <p id="aboutText"></p>
-    <p>Modellər sual-cavab etmir: yazdığın mətni davam etdirir. Heç bir hazır modeldən istifadə olunmayıb, tokenizer də bu data üzərində öyrədilib.</p>
-    <div class="facts" id="facts"></div>
-    <p class="warn"><b>Diqqət:</b> Odlar qrammatikanı yaxşı bilir, amma faktları bilmir. Yerləri, tarixləri və adları tez-tez uydurur. Real şəxslər, qurumlar və hadisələr haqqında yazdıqları da uydurmadır və heç kimin fikrini əks etdirmir. Yazdıqlarını həqiqət kimi qəbul etmə.</p>
-    <p>Model sənin cihazında işləyir: yazdığın mətn heç bir serverə göndərilmir. Model ilk dəfə seçiləndə yüklənir (17–49 MB), sonra brauzer onu yadda saxlayır.</p>
-    <p>Kod, təlim logları və hesabat: <a href="https://github.com/krmhuseyn-sys/odlar">github.com/krmhuseyn-sys/odlar</a></p>
-  </section>
+    <section class="feed" id="feed" aria-label="Mətnlər">
+      <div class="empty" id="empty">
+        <svg class="buta big" aria-hidden="true"><use href="#buta"/></svg>
+        <h1>Cümləyə başla. <span class="serif">Odlar davam etdirsin.</span></h1>
+        <p>Odlar suallara cavab vermir. Yazdığın mətni Azərbaycan dilində davam etdirir. Tamamilə sənin brauzerində işləyir.</p>
+        <div class="starters" id="starters"></div>
+      </div>
+      <div class="turns" id="turns"></div>
+    </section>
 
-  <footer>Odlar · Kərəm Hüseynov · Data: Azərbaycan Vikipediyası (CC BY-SA 4.0), FineWeb-2 (ODC-By)</footer>
-</main>
+    <footer class="dock">
+      <form class="composer" id="composer">
+        <div class="load" id="load" role="status">
+          <div class="load-bar"><i id="loadFill"></i></div>
+          <span id="loadText">Model yüklənir</span>
+        </div>
+        <label class="sr-only" for="prompt">Başlanğıc mətn</label>
+        <textarea id="prompt" rows="1" placeholder="Bir cümləyə başla..." autocomplete="off" spellcheck="false"></textarea>
+        <div class="composer-row">
+          <button type="button" class="ghost-btn" id="settingsBtn" aria-expanded="false" aria-controls="settings">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h9M15 6h2M3 14h3M9 14h8"/><circle cx="13.5" cy="6" r="1.6"/><circle cx="7.5" cy="14" r="1.6"/></svg>
+            Ayarlar
+          </button>
+          <button type="submit" class="send" id="send" aria-label="Yaz" disabled>
+            <svg class="i-send" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M5 9l5-5 5 5"/></svg>
+            <svg class="i-stop" viewBox="0 0 20 20" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5"/></svg>
+          </button>
+        </div>
+        <div class="settings" id="settings" hidden>
+          <label>Uzunluq <output id="lenV">120</output>
+            <input type="range" id="len" min="20" max="400" step="10" value="120">
+            <small>Neçə token yazsın. Təxminən 1.5 token bir sözdür.</small></label>
+          <label>Yaradıcılıq <output id="tempV">0.8</output>
+            <input type="range" id="temp" min="0.2" max="1.4" step="0.05" value="0.8">
+            <small>Aşağı: ehtiyatlı və təkrarçı. Yuxarı: gözlənilməz.</small></label>
+          <label>Təkrar cəzası <output id="repV">1.3</output>
+            <input type="range" id="rep" min="1" max="2" step="0.05" value="1.3">
+            <small>Model eyni sözləri təkrarlayırsa, artır.</small></label>
+          <label>Top-k <output id="topkV">40</output>
+            <input type="range" id="topk" min="1" max="200" step="1" value="40">
+            <small>Hər addımda neçə ən ehtimallı söz arasından seçsin.</small></label>
+        </div>
+      </form>
+      <p class="note">Odlar faktları uydurur: adlar, tarixlər, hadisələr çox vaxt yanlışdır. Yazdıqlarını həqiqət kimi qəbul etmə.</p>
+    </footer>
+  </main>
+</div>
 
+<dialog class="about" id="about" aria-labelledby="aboutTitle">
+  <form method="dialog" class="about-close"><button class="icon-btn" aria-label="Bağla">
+    <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15"/></svg></button></form>
+  <svg class="buta" aria-hidden="true"><use href="#buta"/></svg>
+  <h2 id="aboutTitle">Odlar haqqında</h2>
+  <p>Odlar Azərbaycan dilində sıfırdan öyrədilmiş dil modelləri ailəsidir. Hazır modelin üzərində qurulmayıb: tokenizer, model və təlim tamamilə öz kodumuzdur, pulsuz GPU ilə öyrədilib.</p>
+  <p>Modellər mətni davam etdirir, söhbət etmir. Qrammatikanı yaxşı bilir, faktları bilmir. Növbəti mərhələdə söhbət edən model, Simurq, bunun üzərində qurulacaq.</p>
+  <div id="aboutModels"></div>
+  <p class="muted">Model sənin brauzerinə bir dəfə yüklənir və burada işləyir. Yazdığın mətn heç yerə göndərilmir, tarixçə yalnız bu brauzerdə saxlanır.</p>
+  <p><a href="https://github.com/krmhuseyn-sys/odlar" target="_blank" rel="noopener">Kod və nəticələr GitHub-da</a></p>
+</dialog>
+
+<div class="sr-only" id="live" aria-live="polite"></div>
 <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.20.1/dist/ort.min.js"></script>
 <script type="module" src="app.js"></script>
 </body>

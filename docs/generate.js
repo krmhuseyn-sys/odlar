@@ -22,6 +22,9 @@ export function pickNext(logits, context, { temperature = 0.8, topK = 40, repeti
   return order[order.length - 1];
 }
 
+// Brauzerə hər tokendən sonra ekranı yeniləmək və düymələrə cavab vermək imkanı verir.
+const breathe = () => new Promise(r => setTimeout(r, 0));
+
 // Modeli addım-addım işlədir; hər yeni token üçün onToken çağırılır.
 export async function generate(ort, session, tokenizer, prompt, opts, onToken, shouldStop = () => false) {
   const block = opts.blockSize ?? 256;
@@ -37,6 +40,7 @@ export async function generate(ort, session, tokenizer, prompt, opts, onToken, s
     if (next === tokenizer.eot) break;
     ids.push(next);
     onToken(tokenizer.decode(ids.slice(start)));
+    await breathe();
   }
   return tokenizer.decode(ids);
 }

@@ -63,7 +63,7 @@ Müşahidə: lokal morfologiya (ahəng, şəkilçi) hər iki ölçüdə tam öyr
 | distinct-2, təkrar cəzası yoxdur | 0.878 | 0.756 |
 | distinct-2, təkrar cəzası 1.3 | 0.993 | 0.992 |
 | CPU sürəti (1 thread, fp32) | 51 token/s | 17 token/s |
-| Brauzer (WASM, int8, noutbuk) | ~19 token/s | ~8–10 token/s |
+| Brauzer (WASM, int8, 1 thread) | ~19 token/s (istifadəçi noutbuku) | ~8–10 token/s (headless Chromium) |
 
 Müşahidə: veb datası ilə öyrədilmiş Odlar-1.5 təkrar cəzası olmadan daha çox təkrarlayır (xəbər şablonları). Sadə təkrar cəzası (1.3) bunu hər iki modeldə praktik olaraq aradan qaldırır.
 

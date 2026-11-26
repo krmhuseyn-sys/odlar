@@ -1,0 +1,22 @@
+{
+ "Odlar-1": [
+  1.5295,
+  13.8
+ ],
+ "Odlar-1.5": [
+  1.3939,
+  40.0
+ ],
+ "HuggingFaceTB/SmolLM2-135M": [
+  3.4237,
+  134.5
+ ],
+ "Qwen/Qwen3-0.6B-Base": [
+  2.036,
+  596.0
+ ],
+ "ai-forever/mGPT-1.3B-azerbaijan": [
+  1.269,
+  1417.6
+ ]
+}

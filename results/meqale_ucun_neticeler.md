@@ -42,6 +42,8 @@ Model düzgün cümləyə səhv cümlədən yüksək ehtimal verirmi? ([`minimal
 | Zaman uzlaşması (zərf–feil) | 4/8 | 4/8 |
 | **Cəmi** | **31/40** | **35/40** |
 
+Statistik qeyd (26 noyabr 2026): 31 → 35 fərqi 40 cütlə etibarlı deyil. Cütləşdirilmiş dəqiq McNemar testi p = 0.219 (yalnız Odlar-1-in səhv etdiyi 5 cüt, yalnız Odlar-1.5-in səhv etdiyi 1 cüt). Wilson 95% intervalları üst-üstə düşür: 0.63–0.88 və 0.74–0.95. Məqalədə bu, yaxşılaşma kimi yox, müşahidə kimi verilməlidir. Test 150 cütə genişlənəcək (bax `results/kor_noqteler.md`).
+
 Müşahidə: lokal morfologiya (ahəng, şəkilçi) hər iki ölçüdə tam öyrənilib. Cümlə boyunca semantik uzlaşma ("dünən" → keçmiş zaman) təsadüfi səviyyədədir. Hər iki modelin səhvlərinin əksəriyyəti gələcək zamanlı düzgün cümlələrdədir: modellər keçmiş zamana meyillidir (çox güman ki, xəbər və ensiklopedik mətnlərin keçmiş zamanda yazılması səbəbindən).
 
 ## 4. Fakt bilgisi: paytaxt testi (20 ölkə)

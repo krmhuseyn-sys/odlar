@@ -18,7 +18,7 @@ Belebele-nin Azərbaycan hissəsindəki 488 unikal paraqraf (253 571 simvol, FLO
 - `allmalab/gpt2-aze`: giriş razılıq tələb edir.
 - `nijatzeynalov/gpt2-azerbaijani-small`: köhnə pickle formatı, təhlükəsiz yüklənmir (`weights_only` xətası). Yoxlamanı söndürmək faylın içindəki kodu işə sala bilər, ona görə edilmədi.
 
-Skriptlər: `eval/baselines/` (`belebele_passages.py`, `bpc_belebele.py`, `bpc_hf.py`, `bpc_mgpt.py`). mGPT 7 GB RAM-da bir prosesdə yaddaşı doldurur, ona görə 100 paraqraflıq hissələrlə ölçüldü.
+Skriptlər: `eval/baselines/` (`belebele_passages.py`, `bpc_belebele.py`, `bpc_hf.py`, `mgpt_part.py, run_mgpt.sh`). mGPT 7 GB RAM-da bir prosesdə yaddaşı doldurur, ona görə 100 paraqraflıq hissələrlə ölçüldü.
 
 ## 2. Təsadüfi pəncərə seçimi: datanın nə qədəri görünür
 

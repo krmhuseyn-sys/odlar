@@ -113,6 +113,26 @@ Odlar-2 üçün batch 8 x grad_accum 8 seçildi. Qlobal batch dəyişmir (65 536
 - **Kaggle-da yeganə GPU seçimi T4x2-dir.** "Save & Run All" versiyası 27 noyabr 22:15-də (Bakı vaxtı) növbəyə düşdü və 28 noyabr 02:33-də hələ başlamamışdı (4 saat 18 dəqiqə). Əsas təlimin hər sessiyasında belə gözləmə ola bilər.
 - **Kvota:** həftədə 30 saat, 27 noyabrda 29 saat qalıb.
 
+## Keçid sınağı: iki GPU (Kaggle T4x2, DDP), 28 noyabr 03:00
+
+"Save & Run All" versiyası 5 saat növbədə qaldı; interaktiv sessiya isə növbədə 3-cü yerdən 2 dəqiqəyə açıldı.
+Nəticə: Kaggle-da təlim interaktiv sessiya ilə başladılır (brauzer açıq qalmalıdır).
+
+Eyni config (`sinaq_t4x2.yaml`), eyni kod (validasiya artıq sənəd daxilində hesablanır):
+
+| | Bir T4 (Colab) | İki T4 (Kaggle, DDP) |
+|---|---|---|
+| 300 addım | 22.2 dəq | 13.1 dəq |
+| Sürət (qiymətləndirmə daxil) | 14.8k token/san | 25.0k token/san |
+| train loss, addım 100 / 200 / 300 | 7.957 / 5.996 / 5.293 | 7.957 / 5.991 / 5.290 |
+
+- **DDP səmərəsi:** iki GPU bir GPU-dan 25.0 / 14.8 = 1.69 dəfə sürətlidir. Plan 1.8 fərz edirdi.
+- **Uyğunluq:** train loss iki halda eyni gedir, yəni qradiyentlər düzgün birləşir. Val loss-u müqayisə etmirəm, çünki Kaggle qaçışında validasiya yeni qayda ilə (sənəd daxilində) ölçülüb.
+- **Odlar-2 üçün hesab:** 2.2 mlrd token iki T4-də ~24 saat çəkir. Kaggle-ın həftəlik 30 saatlıq kvotasına sığır.
+- **Brauzer modeli:** eyni sessiyada Odlar-2 ölçüsündə model ONNX-ə ixrac olundu: 110.0 MB, int8 BPC fərqi +0.003.
+
+**Keçid şərti ödənib: 0-cı mərhələ bağlandı.**
+
 ## Tapılan və düzəldilən səhvlər
 
 - **`odlar/export.py`-nin keyfiyyət yoxlaması** PyTorch modelini dropout açıq halda ölçürdü: `torch.onnx.export` sarğı modulun rejimini bərpa edəndə modeli train rejiminə qaytarır. Nəticədə int8 ONNX PyTorch-dan "yaxşı" görünürdü (fərq -0.03 ... -0.09). Düzəldildi. Əvvəlki nəticə sənədlərində bu rəqəm işlədilməyib.
@@ -120,7 +140,7 @@ Odlar-2 üçün batch 8 x grad_accum 8 seçildi. Qlobal batch dəyişmir (65 536
 
 ## Açıq qalanlar (növbəti addımlar)
 
-- **Kaggle T4x2 keçid sınağı (DDP):** notebook Kərəmin hesabında qurulub və növbədədir (`krmhseynov/train`, versiya 2). Başlayanda repodan son kodu çəkir.
+- **Pilot (28 noyabr gecəsi):** toxum 1337 Colab-da (`tools/pilot.sh`), toxum 2 və 3 Kaggle-ın iki GPU-sunda paralel (`tools/pilot_seeds.sh`). Data hər iki platformada eyni koddan və eyni axından hazırlanır.
 - **Hub-a real yükləmə və tarixçə sıxılması:** Kərəmin fine-grained token-i ilə sınanmalıdır (K13).
 - **Uzun sənəd çəkisi (K9) və kiril dövrü kitabların çevrilməsi (K10):** 1-ci mərhələdə, data v1 ilə.
 - **Saytdakı köhnə `odlar15.onnx`:** brauzer keşindəki köhnə JS üçün saxlanılıb. Bir həftə sonra silinə bilər.

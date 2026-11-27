@@ -1,12 +1,13 @@
-"""Pilot qaçışlarının müqayisəsi: eyni addımlarda val loss (cəmi və mənbə üzrə).
+"""Pilot qaçışlarının müqayisəsi: eyni addımlarda val loss (cəmi və mənbə üzrə), toxumlar üzrə orta.
 
-    python tools/pilot_compare.py [runs/pilot runs/pilot_mask runs/pilot_cos]
+    python tools/pilot_compare.py [runs/pilot runs/pilot_mask runs/pilot_cos runs/pilot_s2 ...]
 """
 import csv
 import os
 import sys
 
-runs = sys.argv[1:] or ["runs/pilot", "runs/pilot_mask", "runs/pilot_cos"]
+runs = [r for r in (sys.argv[1:] or ["runs/pilot", "runs/pilot_mask", "runs/pilot_cos"])
+        if not r.rstrip("/").endswith("_data") and os.path.isdir(r)]
 data = {}
 for r in runs:
     p = os.path.join(r, "log.csv")
@@ -37,3 +38,26 @@ for n in names:
     tps = data[n][0][s].get("tok_per_sec", "")
     print(f"  {n:<11} addım {s:>5}: " + ", ".join(f"{k} {v:.4f}" for k, v in sorted(per.items())) +
           (f" | {int(float(tps))/1000:.1f}k tok/s" if tps else ""))
+
+
+# Toxumlar üzrə: hər seçim üçün son addımda val loss, orta və fərdi qiymətlər.
+# Eyni toxumlu qaçışlar eyni başlanğıc və data sırası ilə gedir, ona görə fərqlər cüt-cüt də verilir.
+import re                                                      # noqa: E402
+groups = {}
+for n in names:
+    m = re.match(r"(.+?)(?:_s(\d+))?$", n)
+    rows = data[n][0]
+    s = max(rows)
+    groups.setdefault(m.group(1), {})[int(m.group(2) or 1337)] = (s, float(rows[s]["val_loss"]))
+if any(len(v) > 1 for v in groups.values()):
+    print("\ntoxumlar üzrə (son addım, val loss):")
+    for g, v in groups.items():
+        vals = [x[1] for x in v.values()]
+        print(f"  {g:<11} orta {sum(vals)/len(vals):.4f}  ({', '.join(f's{k}: {x[1]:.4f} @{x[0]}' for k, x in sorted(v.items()))})")
+    base = groups.get("pilot", {})
+    for g in groups:
+        if g == "pilot":
+            continue
+        d = [groups[g][k][1] - base[k][1] for k in groups[g] if k in base and groups[g][k][0] == base[k][0]]
+        if d:
+            print(f"  {g} - pilot (eyni toxum, eyni addım): " + ", ".join(f"{x:+.4f}" for x in d))

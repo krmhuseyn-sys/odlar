@@ -4,7 +4,7 @@ numpy
 tokenizers
 datasets
 pyyaml
-huggingface_hub
+huggingface_hub>=0.25    # super_squash_history (K7)
 pypdf
 onnx
 onnxruntime

@@ -1,5 +1,6 @@
 // Odlar tokenizer: byte-level BPE (GPT-2 üslubu), Python `tokenizers` kitabxanası ilə eyni nəticə verir.
-// tok.json: { vocab: [id -> token], merges: ["a b", ...] }
+// tok.json: { vocab: [id -> token], merges: ["a b", ...], digits?: true }
+// digits: true olanda (Odlar-2) hər rəqəm ayrıca token olur, Python-dakı Digits(individual_digits) kimi.
 
 function bytesToUnicode() {
   const bs = [];
@@ -17,9 +18,24 @@ function bytesToUnicode() {
 }
 
 const PRETOKEN = /'s|'t|'re|'ve|'m|'ll|'d| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+/gu;
+const DIGIT = /(\p{N})/u;
+
+// odlar/text.py normalize() ilə eyni: model təlimdə gördüyü yazılışı burada da görsün.
+const CHAR_MAP = new Map([
+  ["\u04d9", "\u0259"], ["\u04d8", "\u018f"],
+  ["\u2018", "'"], ["\u2019", "'"], ["\u02bc", "'"], ["\u0060", "'"], ["\u00b4", "'"],
+  ["\u201c", '"'], ["\u201d", '"'], ["\u201e", '"'], ["\u00ab", '"'], ["\u00bb", '"'],
+  ["\u00a0", " "], ["\u2009", " "], ["\u202f", " "], ["\u2007", " "],
+  ["\u200b", ""], ["\u200c", ""], ["\u200d", ""], ["\ufeff", ""],
+]);
+export function normalize(t) {
+  t = t.normalize("NFC").replace(/\u00ad\s*/g, "");
+  return Array.from(t, c => CHAR_MAP.has(c) ? CHAR_MAP.get(c) : c).join("");
+}
 
 export class OdlarTokenizer {
-  constructor({ vocab, merges }) {
+  constructor({ vocab, merges, digits = false }) {
+    this.digits = digits;
     this.vocab = vocab;
     this.ids = new Map(vocab.map((t, i) => [t, i]));
     this.ranks = new Map(merges.map((m, i) => [m, i]));
@@ -46,13 +62,21 @@ export class OdlarTokenizer {
     return parts;
   }
 
+  pieces(text) {
+    if (!this.digits) return [text];
+    return text.split(DIGIT).filter(p => p.length);
+  }
+
   encode(text) {
     const out = [];
-    for (const m of text.matchAll(PRETOKEN)) {
-      const mapped = Array.from(this.utf8.encode(m[0]), b => this.byteEnc.get(b)).join("");
-      for (const p of this.bpe(mapped)) {
-        const id = this.ids.get(p);
-        if (id !== undefined) out.push(id);
+    text = normalize(text);
+    for (const piece of this.pieces(text)) {
+      for (const m of piece.matchAll(PRETOKEN)) {
+        const mapped = Array.from(this.utf8.encode(m[0]), b => this.byteEnc.get(b)).join("");
+        for (const p of this.bpe(mapped)) {
+          const id = this.ids.get(p);
+          if (id !== undefined) out.push(id);
+        }
       }
     }
     return out;

@@ -64,6 +64,26 @@ def apply_rope(x, cos, sin):
     return out.flatten(-2)
 
 
+def doc_mask(idx, sep):
+    """(B, 1, T, T) bool maska: causal və eyni sənəd. Ayırıcı token öz sənədinin sonuncusudur."""
+    is_sep = (idx == sep).int()
+    doc = torch.cumsum(is_sep, dim=1) - is_sep                    # (B, T): sənəd nömrəsi
+    T = idx.size(1)
+    causal = torch.ones(T, T, dtype=torch.bool, device=idx.device).tril()
+    return ((doc[:, :, None] == doc[:, None, :]) & causal)[:, None]
+
+
+def _attend(q, k, v, mask, past, dropout_p):
+    """past verilsə, keçmiş k/v əvvələ qoşulur (mask o zaman mütləq verilir)."""
+    if past is not None:
+        k = torch.cat([past[0], k], dim=2)
+        v = torch.cat([past[1], v], dim=2)
+    y = F.scaled_dot_product_attention(q, k, v, attn_mask=mask, is_causal=mask is None,
+                                       dropout_p=dropout_p)
+    B, H, T, D = q.shape
+    return y.transpose(1, 2).contiguous().view(B, T, H * D), torch.stack([k, v])
+
+
 # ---------------------------------------------------------------- bloklar
 class Block(nn.Module):
     """GPT-2 bloku. Parametr adları Odlar-1/1.5 checkpoint-ləri ilə eynidir, dəyişmək olmaz."""
@@ -84,18 +104,20 @@ class Block(nn.Module):
         )
         self.drop = nn.Dropout(c.dropout)
 
-    def forward(self, x, rope=None):
-        B, T, C = x.shape
-        q, k, v = self.qkv(self.ln1(x)).split(C, dim=2)
+    def attn(self, h, rope=None, mask=None, past=None):
+        """Attention. past: (2, B, H, P, D) keş (brauzer ixracı üçün). Qaytarır: çıxış və (k, v)."""
+        B, T, C = h.shape
+        q, k, v = self.qkv(h).split(C, dim=2)
         q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
-        y = F.scaled_dot_product_attention(
-            q, k, v, is_causal=True, dropout_p=self.dropout if self.training else 0.0)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return _attend(q, k, v, mask, past, self.dropout if self.training else 0.0)
+
+    def forward(self, x, rope=None, mask=None, past=None):
+        y, kv = self.attn(self.ln1(x), rope, mask, past)
         x = x + self.drop(self.proj(y))
         x = x + self.mlp(self.ln2(x))
-        return x
+        return (x, kv) if past is not None else x
 
 
 class LlamaBlock(nn.Module):
@@ -116,21 +138,22 @@ class LlamaBlock(nn.Module):
         self.down = nn.Linear(hidden, c.n_embd, bias=False)
         self.drop = nn.Dropout(c.dropout)
 
-    def forward(self, x, rope=None):
-        B, T, C = x.shape
+    def attn(self, h, rope, mask=None, past=None):
+        B, T, C = h.shape
         cos, sin = rope
-        q, k, v = self.qkv(self.norm1(x)).split(C, dim=2)
+        q, k, v = self.qkv(h).split(C, dim=2)
         q = q.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         k = k.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         v = v.view(B, T, self.n_head, C // self.n_head).transpose(1, 2)
         q, k = apply_rope(q, cos, sin), apply_rope(k, cos, sin)
-        y = F.scaled_dot_product_attention(
-            q, k, v, is_causal=True, dropout_p=self.dropout if self.training else 0.0)
-        y = y.transpose(1, 2).contiguous().view(B, T, C)
+        return _attend(q, k, v, mask, past, self.dropout if self.training else 0.0)
+
+    def forward(self, x, rope=None, mask=None, past=None):
+        y, kv = self.attn(self.norm1(x), rope, mask, past)
         x = x + self.drop(self.proj(y))
         h = self.norm2(x)
         x = x + self.drop(self.down(F.silu(self.gate(h)) * self.up(h)))
-        return x
+        return (x, kv) if past is not None else x
 
 
 # ---------------------------------------------------------------- model
@@ -172,8 +195,11 @@ class GPT(nn.Module):
     def num_params(self):
         return sum(p.numel() for p in self.parameters())
 
-    def forward(self, idx, targets=None):
+    def forward(self, idx, targets=None, doc_sep=None):
+        """doc_sep: sənəd ayırıcı tokenin id-si (<|endoftext|>). Verilsə, hər token yalnız öz
+        sənədinin əvvəlki tokenlərinə baxır (sənəd maskası, K3). Verilməsə, adi causal attention."""
         B, T = idx.shape
+        mask = doc_mask(idx, doc_sep) if doc_sep is not None else None
         x = self.tok_emb(idx)
         rope = None
         if self.config.arch == "gpt2":
@@ -182,12 +208,33 @@ class GPT(nn.Module):
             rope = (self.rope_cos[:T], self.rope_sin[:T])
         x = self.drop(x)
         for blk in self.blocks:
-            x = blk(x, rope)
+            x = blk(x, rope, mask)
         logits = self.head(self.ln_f(x))
         loss = None
         if targets is not None:
-            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.reshape(-1))
         return logits, loss
+
+    def forward_cached(self, idx, past):
+        """Brauzer üçün keşli addım. idx: (B, S) yeni tokenlər; past: (L, 2, B, H, P, D) əvvəlki
+        tokenlərin key/value-ları (P = 0 ola bilər). Qaytarır: son tokenin logit-ləri (B, V) və
+        present: (L, 2, B, H, P+S, D). P+S block_size-dan çox olmamalıdır."""
+        B, S = idx.shape
+        P = past.shape[4]
+        pos = torch.arange(S, device=idx.device) + P
+        x = self.tok_emb(idx)
+        rope = None
+        if self.config.arch == "gpt2":
+            x = x + self.pos_emb(pos)
+        else:
+            rope = (self.rope_cos[pos], self.rope_sin[pos])
+        mask = torch.arange(S + P, device=idx.device)[None, :] <= pos[:, None]     # (S, P+S)
+        presents = []
+        for i, blk in enumerate(self.blocks):
+            x, kv = blk(x, rope, mask, past[i])
+            presents.append(kv)
+        logits = F.linear(self.ln_f(x[:, -1, :]), self.tok_emb.weight)   # ortaq embedding bir dəfə
+        return logits, torch.stack(presents)
 
     @torch.no_grad()
     def generate(self, idx, max_new_tokens=100, temperature=0.8, top_k=40, stop_id=None,

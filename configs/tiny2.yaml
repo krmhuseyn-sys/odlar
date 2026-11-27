@@ -1,0 +1,54 @@
+# Sınaq: yeni data boru xətti və təlim (Odlar-2 iş masası). GPU-suz, bir neçə dəqiqə.
+#   python -m odlar.train configs/tiny2.yaml
+#   torchrun --nproc_per_node=2 -m odlar.train configs/tiny2.yaml      # DDP sınağı
+name: tiny2
+model:
+  arch: llama
+  block_size: 128
+  n_layer: 2
+  n_head: 4
+  n_embd: 128
+  dropout: 0.0
+data:
+  vocab_size: 4000
+  tok_train_chars: 6000000
+  val_frac: 0.05
+  val_max_tokens: 100000
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      streaming: true
+      max_chars: 3000000
+      repeat: 2
+      tok_weight: 1.5
+    - type: files
+      label: bedii
+      glob: books/**/*        # fayl yoxdursa, mənbə boş keçir
+      min_chars: 500
+      filter: false
+      repeat: 3
+    - type: hf
+      label: veb
+      path: HuggingFaceFW/fineweb-2
+      name: azj_Latn
+      streaming: true
+      max_chars: 4000000
+      min_chars: 300
+      routes:
+        - label: xeber
+          domains: [oxu.az, report.az, apa.az, azertag.az, qafqazinfo.az, musavat.com, axar.az, modern.az, publika.az, sputnik.az, trend.az, milli.az, yeniavaz.com, ikisahil.az, unikal.org, bizimyol.info, sia.az, xezerxeber.az, lent.az, metbuat.az]
+          max_chars: 1000000
+train:
+  batch_size: 16
+  grad_accum: 2
+  lr: 2.0e-3
+  warmup: 20
+  max_steps: 300
+  eval_every: 100
+  eval_batches: 10
+  schedule: wsd
+  decay_frac: 0.2
+  doc_mask: true
+  sample_prompt: Qış gecəsi idi

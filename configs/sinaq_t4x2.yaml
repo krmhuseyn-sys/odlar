@@ -1,0 +1,38 @@
+# Keçid sınağı (0-cı mərhələ): Odlar-2 ölçüsündə model Kaggle T4x2-də iki GPU ilə işləyirmi?
+# ~200M simvol data, 300 addım (~20M token). Ölçülən: token/san (plan: ~22k), yaddaş, loss düşür.
+#   torchrun --standalone --nproc_per_node=2 -m odlar.train configs/sinaq_t4x2.yaml
+base: odlar2.yaml
+name: sinaq_t4x2
+data:
+  tok_train_chars: 100000000
+  hub_dataset: null
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      streaming: true
+      max_chars: 50000000
+      filter: {max_digit: 0.25}
+      repeat: 2
+    - type: hf
+      label: veb
+      path: HuggingFaceFW/fineweb-2
+      name: azj_Latn
+      streaming: true
+      max_chars: 150000000
+      min_chars: 300
+      routes:
+        - label: xeber
+          max_chars: 30000000
+          domains: [publika.az, azadliq.org, amerikaninsesi.org, report.az, metbuat.az, azertag.az,
+                    azadliq.az, sizinyol.com, trend.az, yenicag.az, 24saat.org, sia.az, habermonitor.com,
+                    turaninfo.az, sumqayitxeber.com, fins.az, musavat.az, musavat.com, milli.az,
+                    bizimxeber.az, ekspress.az, aznews.az, movqe.az, teleqraf.com, kaspi.az, sputnik.az,
+                    oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az]
+train:
+  warmup: 100
+  max_steps: 300
+  eval_every: 100
+  hub_every: 100000      # sınaqda Hub-a yazılmır
+  hub_repo: null

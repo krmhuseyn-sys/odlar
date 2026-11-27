@@ -11,6 +11,7 @@ import torch
 from tokenizers import Tokenizer
 
 from .model import load_checkpoint
+from .text import normalize
 
 
 def load(model_dir, device="cpu", **overrides):
@@ -21,7 +22,7 @@ def load(model_dir, device="cpu", **overrides):
 
 def write(model, tok, prompt, tokens=100, temp=0.8, top_k=40, rep=1.3, device="cpu"):
     eot = tok.token_to_id("<|endoftext|>")
-    idx = torch.tensor([tok.encode(prompt).ids[-model.config.block_size:]], device=device)
+    idx = torch.tensor([tok.encode(normalize(prompt)).ids[-model.config.block_size:]], device=device)
     out = model.generate(idx, max_new_tokens=tokens, temperature=temp, top_k=top_k,
                          stop_id=eot, repetition_penalty=rep)
     return tok.decode(out[0].tolist())

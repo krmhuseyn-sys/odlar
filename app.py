@@ -11,6 +11,7 @@ import torch
 import gradio as gr
 from tokenizers import Tokenizer
 from odlar.model import load_checkpoint
+from odlar.text import normalize
 
 ON_SPACES = bool(os.environ.get("SPACE_ID"))
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -43,7 +44,7 @@ def yaz(ad, prompt, uzunluq, temperatur, top_k, tekrar):
     if not prompt.strip():
         return "Bir neçə söz yaz, model davam etdirsin."
     model, tok, eot = yukle(ad)
-    idx = torch.tensor([tok.encode(prompt).ids[-model.config.block_size:]])
+    idx = torch.tensor([tok.encode(normalize(prompt)).ids[-model.config.block_size:]])
     out = model.generate(idx, max_new_tokens=int(uzunluq), temperature=float(temperatur),
                          top_k=int(top_k), stop_id=eot,
                          repetition_penalty=float(tekrar))

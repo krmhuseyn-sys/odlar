@@ -312,7 +312,7 @@ async function runTurn(turn, mode) {
     await generate(ort, st.session, st.tokenizer, turn.prompt + base, {
       maxNewTokens: settings.len, temperature: settings.temp, topK: settings.topk,
       repetitionPenalty: settings.rep, minNewTokens: mode === "continue" ? 5 : 20,
-      blockSize: byId(modelId).blockSize,
+      blockSize: byId(modelId).blockSize, kv: byId(modelId).kv,
     }, text => {
       const stick = nearBottom();
       turn.output = base + text; n++;

@@ -26,17 +26,41 @@ export function pickNext(logits, context, { temperature = 0.8, topK = 40, repeti
 const breathe = () => new Promise(r => setTimeout(r, 0));
 
 // Modeli addım-addım işlədir; hər yeni token üçün onToken çağırılır.
+// İki model formatı var:
+//   keşli (Odlar-2-dən): girişlər input_ids + past, çıxışlar logits + present. Hər addımda yalnız
+//     yeni token hesablanır; opts.kv = { layers, heads, headDim } lazımdır (models.js).
+//   keşsiz (Odlar-1, 1.5): hər addımda bütün kontekst yenidən hesablanır.
 export async function generate(ort, session, tokenizer, prompt, opts, onToken, shouldStop = () => false) {
   const block = opts.blockSize ?? 256;
   const ids = tokenizer.encode(prompt);
+  if (!ids.length) ids.push(tokenizer.eot);
   const start = ids.length;
+  const cached = session.inputNames.includes("past");
+  const kv = opts.kv;
+  if (cached && !kv) throw new Error("keşli model üçün models.js-də kv ölçüləri yazılmayıb");
+  const emptyPast = () => new ort.Tensor("float32", new Float32Array(0), [kv.layers, 2, 1, kv.heads, 0, kv.headDim]);
+  const tensor = a => new ort.Tensor("int64", BigInt64Array.from(a, BigInt), [1, a.length]);
+  let past = null, pastLen = 0;
   for (let step = 0; step < opts.maxNewTokens; step++) {
     if (shouldStop()) break;
-    const ctx = ids.slice(-block);
-    const input = new ort.Tensor("int64", BigInt64Array.from(ctx, BigInt), [1, ctx.length]);
-    const out = await session.run({ input_ids: input });
+    let out;
+    if (cached) {
+      let feed;
+      if (pastLen > 0 && pastLen < block) {
+        feed = [ids[ids.length - 1]];                      // yalnız son token
+      } else {
+        // ilk addım və ya kontekst doldu: son hissəni keşsiz yenidən hesabla
+        feed = ids.slice(-(pastLen > 0 ? Math.floor(block * 3 / 4) : block));
+        past = emptyPast();
+      }
+      out = await session.run({ input_ids: tensor(feed), past });
+      past = out.present;
+      pastLen = past.dims[4];
+    } else {
+      out = await session.run({ input_ids: tensor(ids.slice(-block)) });
+    }
     const ban = step < (opts.minNewTokens ?? 20) ? tokenizer.eot : -1;
-    const next = pickNext(out.logits.data, ctx, opts, ban);
+    const next = pickNext(out.logits.data, ids.slice(-block), opts, ban);
     if (next === tokenizer.eot) break;
     ids.push(next);
     onToken(tokenizer.decode(ids.slice(start)));

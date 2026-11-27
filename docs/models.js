@@ -1,15 +1,19 @@
 // Saytdakı modellər. Yeni model əlavə etmək üçün:
-//   python -m odlar.export runs/odlar2 --name odlar2 --to docs
-// sonra bu siyahıya bir obyekt əlavə et (export komandası blockSize-ı yazır).
+//   python -m odlar.export runs/odlar2 --name odlar2 --to web
+// sonra bu siyahıya bir obyekt əlavə et (export komandası blockSize və kv ölçülərini yazır).
+// 100 MB-dan böyük fayllar GitHub-a sığmır (K1): onnx və tok üçün Hugging Face ünvanı yazılır, məs.
+//   onnx: "https://huggingface.co/krmhus/odlar-web/resolve/main/odlar2.onnx"
+// kv: { layers, heads, headDim } yalnız keşli ixrac üçün (Odlar-2-dən); keşsiz modellərdə yazılmır.
 
 export const MODELS = [
   {
     id: "odlar-1.5",
     name: "Odlar-1.5",
-    onnx: "odlar15.onnx",
+    onnx: "odlar15kv.onnx",
     tok: "tok15.json",
     blockSize: 512,
-    size: "49 MB",
+    kv: { layers: 10, heads: 8, headDim: 64 },
+    size: "40 MB",
     summary: "Daha uzun və əlaqəli mətn yazır",
     about: "Azərbaycan Vikipediyası və FineWeb-2 veb mətnləri (xəbər, bloq, saytlar) üzərində sıfırdan öyrədilib. Odlar-1-dən üç dəfə böyükdür.",
     facts: [["40M", "parametr"], ["345M", "token təlim datası"], ["512", "token kontekst"], ["2 saat", "təlim, bir T4 GPU"]],

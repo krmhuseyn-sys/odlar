@@ -60,8 +60,10 @@ data:
                     bizimxeber.az, ekspress.az, aznews.az, movqe.az, teleqraf.com, kaspi.az, sputnik.az,
                     oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az]
 train:
-  batch_size: 16
-  grad_accum: 4          # qlobal: 16 x 4 x 1024 = 65 536 token/addım (2 GPU-da hər biri 2 addım)
+  # 27 noyabr Colab T4 ölçüsü (tools/gpu_probe.py, fp16): batch 8 -> 8.4 GiB, 16.4k token/san;
+  # batch 12 -> 11.8 GiB, 16.3k; batch 16 yaddaşa sığmır. Sürət batch 8-də platoya çatır.
+  batch_size: 8
+  grad_accum: 8          # qlobal: 8 x 8 x 1024 = 65 536 token/addım (2 GPU-da hər biri 4 addım)
   lr: 3.0e-4
   warmup: 1000
   schedule: wsd          # sabit sürət, son 20%-də 1-sqrt ilə 10%-ə enmə (K4)

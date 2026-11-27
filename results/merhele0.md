@@ -110,7 +110,7 @@ Odlar-2 üçün batch 8 x grad_accum 8 seçildi. Qlobal batch dəyişmir (65 536
 
 - **Bir T4-də 2.2 mlrd token ~41 saat çəkir.** Plan 49 saat təxmin edirdi.
 - **T4x2-də vaxt DDP səmərəsindən asılıdır.** Plandakı 1.8 dəfəlik fərziyyə ilə ~23 saat alınır, amma bu fərziyyə hələ ölçülməyib: Kaggle sınağı bunu göstərəcək.
-- **Kaggle-da yeganə GPU seçimi T4x2-dir.** "Save & Run All" versiyası 27 noyabr 22:15-də (Bakı vaxtı) növbəyə düşdü və 28 noyabr 00:13-də hələ başlamamışdı (1 saat 58 dəqiqə). Əsas təlimin hər sessiyasında belə gözləmə ola bilər.
+- **Kaggle-da yeganə GPU seçimi T4x2-dir.** "Save & Run All" versiyası 27 noyabr 22:15-də (Bakı vaxtı) növbəyə düşdü və 28 noyabr 00:45-də hələ başlamamışdı (2 saat 30 dəqiqə). Əsas təlimin hər sessiyasında belə gözləmə ola bilər.
 - **Kvota:** həftədə 30 saat, 27 noyabrda 29 saat qalıb.
 
 ## Tapılan və düzəldilən səhvlər

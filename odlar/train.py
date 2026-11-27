@@ -209,7 +209,12 @@ def train(cfg):
     if torch.cuda.is_available():
         device = f"cuda:{LOCAL}"
         log(f"GPU: {torch.cuda.get_device_name(LOCAL)} x{WORLD}")
-        amp_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+        # bf16 yalnız aparat dəstəyi olan GPU-larda (Ampere+, sm80+). torch 2.14 T4 (sm75) üçün də
+        # is_bf16_supported() = True qaytarır (emulyasiya): o zaman yaddaşa qənaət edən attention
+        # işləmir və T4-də sürət ~4 dəfə düşür (27 noyabr Colab ölçüsü)
+        cap = torch.cuda.get_device_capability(LOCAL)
+        amp_dtype = torch.bfloat16 if cap[0] >= 8 and torch.cuda.is_bf16_supported() else torch.float16
+        log(f"Dəqiqlik: {'bf16' if amp_dtype == torch.bfloat16 else 'fp16 + GradScaler'} (sm{cap[0]}{cap[1]})")
     else:
         device = "cpu"
         log(f"GPU yoxdur, CPU-da işləyir (yalnız kiçik sınaq üçün), proses sayı {WORLD}")

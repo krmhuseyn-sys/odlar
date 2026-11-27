@@ -19,7 +19,8 @@ cfg = load_config(sys.argv[1] if len(sys.argv) > 1 else "configs/odlar2.yaml")
 dev = "cuda"
 p = torch.cuda.get_device_properties(0)
 print(f"GPU: {p.name}, {p.total_memory/2**30:.1f} GiB, sm{p.major}{p.minor}, torch {torch.__version__}")
-dt = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+dt = torch.bfloat16 if p.major >= 8 and torch.cuda.is_bf16_supported() else torch.float16   # train.py ilə eyni qayda
+print("  is_bf16_supported():", torch.cuda.is_bf16_supported(), "| seçilən:", dt)
 
 # 1) attention yolları
 from torch.nn.attention import sdpa_kernel, SDPBackend        # noqa: E402

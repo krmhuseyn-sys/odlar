@@ -1,0 +1,4 @@
+base: pilot.yaml
+name: pilot_cos
+train:
+  schedule: cosine

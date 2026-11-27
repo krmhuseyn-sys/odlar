@@ -1,0 +1,53 @@
+# Pilot (2-ci mərhələnin erkən variantı, 28 noyabr gecəsi): kiçik model, eyni data, eyni toxum.
+# Üç qaçış yalnız bir seçimlə fərqlənir; eyni data sırası və eyni başlanğıc çəkilər müqayisəni
+# "cütləşmiş" edir: fərq seçimdən gəlir, təsadüfdən yox.
+#   pilot.yaml       WSD, sənəd maskası yoxdur (əsas)
+#   pilot_mask.yaml  + sənəd maskası (K3)
+#   pilot_cos.yaml   cosine cədvəli (K4)
+# Hamısı birdən:  bash tools/pilot.sh
+base: odlar2.yaml
+name: pilot
+model:
+  n_layer: 6
+  n_head: 8
+  n_embd: 512
+data:
+  dir: runs/pilot_data        # üç qaçış eyni datanı paylaşır
+  tok_train_chars: 100000000
+  hub_dataset: null
+  sources:
+    - type: hf
+      label: vikipediya
+      path: wikimedia/wikipedia
+      name: 20231101.az
+      streaming: true
+      max_chars: 120000000
+      filter: {max_digit: 0.25}
+      repeat: 2
+    - type: hf
+      label: veb
+      path: HuggingFaceFW/fineweb-2
+      name: azj_Latn
+      streaming: true
+      max_chars: 500000000
+      min_chars: 300
+      routes:
+        - label: xeber
+          max_chars: 80000000
+          domains: [publika.az, azadliq.org, amerikaninsesi.org, report.az, metbuat.az, azertag.az,
+                    azadliq.az, sizinyol.com, trend.az, yenicag.az, 24saat.org, sia.az, habermonitor.com,
+                    turaninfo.az, sumqayitxeber.com, fins.az, musavat.az, musavat.com, milli.az,
+                    bizimxeber.az, ekspress.az, aznews.az, movqe.az, teleqraf.com, kaspi.az, sputnik.az,
+                    oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az]
+train:
+  batch_size: 16
+  grad_accum: 2          # 32 768 token/addım
+  lr: 6.0e-4
+  warmup: 300
+  max_steps: 6000        # ~197M token
+  schedule: wsd
+  doc_mask: false
+  eval_every: 500
+  eval_batches: 40
+  hub_repo: null
+  hub_every: 1000000

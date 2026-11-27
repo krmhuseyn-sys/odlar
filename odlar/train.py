@@ -339,7 +339,9 @@ def train(cfg):
             for i in range(0, len(blk), B):
                 x, y = to_dev(blk[i:i + B])
                 with autocast():
-                    _, l = model(x, y, doc_sep)
+                    # Validasiya həmişə sənəd daxilində (maska ilə): saytda model yalnız bir mətnə baxır,
+                    # və maskalı/maskasız öyrədilmiş qaçışlar eyni qayda ilə müqayisə olunur (K3)
+                    _, l = model(x, y, eot)
                 s += torch.tensor([l.float().item() * len(x), len(x)], device=device)
             s = all_sum(s)
             res[k] = (s[0] / s[1].clamp(min=1)).item()

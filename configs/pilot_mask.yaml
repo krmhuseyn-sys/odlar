@@ -1,0 +1,4 @@
+base: pilot.yaml
+name: pilot_mask
+train:
+  doc_mask: true

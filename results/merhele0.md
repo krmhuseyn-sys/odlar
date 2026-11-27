@@ -69,7 +69,7 @@ Sayt real Chrome-da (Playwright, başsız) sınandı:
 
 ## Real GPU sınağı (Colab, bir T4, 27 noyabr axşamı)
 
-Kaggle T4x2 növbəsi 2 saatdan çox başlamadığı üçün sınaq əvvəlcə Colab-da bir T4 ilə edildi.
+Kaggle T4x2 növbəsi uzun çəkdiyi üçün sınaq əvvəlcə Colab-da bir T4 ilə edildi.
 İki GPU-nun birgə işləməsi (DDP) burada sınana bilməz, o Kaggle-da qalır.
 
 **Tapılan iki səhv (hər ikisi düzəldildi):**
@@ -110,7 +110,7 @@ Odlar-2 üçün batch 8 x grad_accum 8 seçildi. Qlobal batch dəyişmir (65 536
 
 - **Bir T4-də 2.2 mlrd token ~41 saat çəkir.** Plan 49 saat təxmin edirdi.
 - **T4x2-də vaxt DDP səmərəsindən asılıdır.** Plandakı 1.8 dəfəlik fərziyyə ilə ~23 saat alınır, amma bu fərziyyə hələ ölçülməyib: Kaggle sınağı bunu göstərəcək.
-- **Kaggle-da yeganə GPU seçimi T4x2-dir.** "Save & Run All" versiyası 27 noyabr 22:15-dən (Bakı vaxtı) ən azı 2 saat növbədə qaldı. Əsas təlimin hər sessiyasında belə gözləmə ola bilər.
+- **Kaggle-da yeganə GPU seçimi T4x2-dir.** "Save & Run All" versiyası 27 noyabr 22:15-də (Bakı vaxtı) növbəyə düşdü və 23:52-də hələ başlamamışdı (1 saat 37 dəqiqə). Əsas təlimin hər sessiyasında belə gözləmə ola bilər.
 - **Kvota:** həftədə 30 saat, 27 noyabrda 29 saat qalıb.
 
 ## Tapılan və düzəldilən səhvlər

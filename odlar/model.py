@@ -58,7 +58,9 @@ def rope_cache(head_dim, max_len, theta=10000.0, scale=1.0):
 
 
 def apply_rope(x, cos, sin):
-    """x: (B, H, T, D). Hər cüt ədədi mövqeyə görə fırladır."""
+    """x: (B, H, T, D). Hər cüt ədədi mövqeyə görə fırladır.
+    cos/sin x-in tipinə salınır: fp32 cədvəl fp16 vektoru fp32-yə qaldırmasın (yaddaş və attention yolu)."""
+    cos, sin = cos.to(x.dtype), sin.to(x.dtype)
     x1, x2 = x[..., 0::2], x[..., 1::2]
     out = torch.stack((x1 * cos - x2 * sin, x1 * sin + x2 * cos), dim=-1)
     return out.flatten(-2)

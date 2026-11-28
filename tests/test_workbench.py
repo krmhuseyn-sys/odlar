@@ -186,6 +186,30 @@ def test_minhash_near_duplicates():
     assert dup[60:].mean() > 0.95, f"oxşar sənədlərin {dup[60:].mean():.0%}-i tutuldu"
 
 
+def test_cyrillic_conversion():
+    az = "Азәрбајҹан Республикасы Ҹәнуби Гафгазда јерләшән дөвләтдир. Һүсејн Ҹавид бөјүк шаир иди. " * 3
+    ru = "Азербайджанская Республика расположена на Южном Кавказе. Хусейн Джавид был поэтом. " * 3
+    assert T.is_az_cyrillic(az) and not T.is_az_cyrillic(ru)
+    assert T.cyr2lat(az).startswith("Azərbaycan Respublikası Cənubi Qafqazda yerləşən dövlətdir. Hüseyn Cavid")
+    assert T.cyr2lat("ИСТИГЛАЛ Ырмаг Гарабағ ҸӘФӘР") == "İSTİQLAL Irmaq Qarabağ CƏFƏR"
+    assert not T.is_az_cyrillic("Bakı gözəl şəhərdir. " * 20)
+
+
+def test_routes_by_domain_and_length():
+    from odlar import data as D
+    D._init_worker({"label": "veb", "min_chars": 10, "rules": None, "wiki": False, "pii": False,
+                    "dedup": False, "cyrillic": True,
+                    "routes": [{"label": "xeber", "domains": ["oxu.az"]},
+                               {"label": "veb_uzun", "min_chars": 500}]})
+    short, long_ = "Qısa mətn burada yazılıb.", "Uzun mətn burada yazılıb. " * 40
+    assert D._process((short, "https://www.oxu.az/x"))[0] == "xeber"
+    assert D._process((long_, "https://news.oxu.az/x"))[0] == "xeber"      # domen birinci yoxlanır
+    assert D._process((long_, "https://blog.example.az/x"))[0] == "veb_uzun"
+    assert D._process((short, None))[0] == "veb"
+    out, t, _ = D._process(("Азәрбајҹан дили гәдим дилдир. Бакы шәһәри. " * 10, None))
+    assert t.startswith("Azərbaycan dili qədim dildir.")
+
+
 # ---------------------------------------------------------------- tokenizer
 def test_tokenizer_digits_and_specials():
     from odlar.data import build_tokenizer, SPECIAL_TOKENS

@@ -29,6 +29,42 @@ def normalize(t):
     return t.translate(_CHAR_MAP)
 
 
+# ---------------------------------------------------------------- kiril -> latın (K10)
+# 1958-1991-ci illərin Azərbaycan kiril əlifbası -> 1991-ci il latın əlifbası. Rus alınmalarındakı
+# hərflər (я, ю, ё, ц, щ, ь, ъ, э) ənənəvi yazılışla verilir.
+_CYR = {
+    "а": "a", "б": "b", "ҹ": "c", "ч": "ç", "д": "d", "е": "e", "ә": "ə", "ф": "f", "ҝ": "g", "ғ": "ğ",
+    "һ": "h", "х": "x", "ы": "ı", "и": "i", "ж": "j", "к": "k", "г": "q", "л": "l", "м": "m", "н": "n",
+    "о": "o", "ө": "ö", "п": "p", "р": "r", "с": "s", "ш": "ş", "т": "t", "у": "u", "ү": "ü", "в": "v",
+    "ј": "y", "з": "z", "я": "ya", "ю": "yu", "ё": "yo", "ц": "ts", "щ": "şç", "э": "e", "ь": "", "ъ": "",
+    "й": "y", "қ": "k", "ҡ": "q",
+}
+_CYR_UP = {"И": "İ", "Ы": "I"}
+_CYR_MAP = {}
+for c, l in _CYR.items():
+    _CYR_MAP[c] = l
+    up = c.upper()
+    if up != c:
+        _CYR_MAP[up] = _CYR_UP.get(up, l[:1].upper() + l[1:])
+_AZ_CYR_ONLY = set("әүөҹҝғһјӘҮӨҸҜҒҺЈ")       # rus dilində yoxdur
+
+
+def is_az_cyrillic(t, min_share=0.02):
+    """Mətn Azərbaycan kirilindədirmi? Rus mətnində ә, ү, ө, ҹ, ҝ, ғ, һ, ј hərfləri olmur;
+    Azərbaycan kirilində təkcə "ә" hərflərin ~7%-idir."""
+    cyr = [c for c in t if "\u0400" <= c <= "\u04ff"]
+    if len(cyr) < 50:
+        return False
+    letters = sum(c.isalpha() for c in t)
+    if len(cyr) / max(1, letters) < 0.5:
+        return False
+    return sum(c in _AZ_CYR_ONLY for c in cyr) / len(cyr) >= min_share
+
+
+def cyr2lat(t):
+    return "".join(_CYR_MAP.get(c, c) for c in t)
+
+
 # ---------------------------------------------------------------- Vikipediya
 # Məqalənin sonundakı siyahı bölmələri: model bunları öyrənəndə uzun mətndə "İstinadlar"a düşür.
 WIKI_TAIL = ("İstinadlar", "Həmçinin bax", "Xarici keçidlər", "Ədəbiyyat", "Mənbələr", "Mənbə",

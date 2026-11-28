@@ -29,11 +29,15 @@ Hər mənbədə əlavə olaraq:
       pii: true           # e-poçt və telefonları maskala
       dedup: true         # MinHash dublikat yoxlamasına qatılsın
       tok_weight: 1       # tokenizer nümunəsində əlavə çəki (bədii, Vikipediya üçün > 1)
-      routes:             # domenə görə ayrı səbətə yönəlt (məs. xəbər saytları, payı məhdud)
-        - label: xeber
+      cyrillic: true      # Azərbaycan kirilindəki sənədləri latına çevir (K10)
+      routes:             # ayrı səbətlərə yönəlt; ilk uyğun gələn seçilir
+        - label: xeber    # domenə görə (xəbər saytları, payı max_chars ilə məhdud)
           domains: [oxu.az, report.az, apa.az]
           max_chars: 400000000
           repeat: 1
+        - label: veb_uzun # uzunluğa görə (K9: uzun sənədlər əlavə çəki alır)
+          min_chars: 8000
+          repeat: 2
 Köhnə formatda (train.npy/val.npy) hazırlanmış data da oxunur.
 """
 import glob
@@ -141,7 +145,10 @@ def _process(item):
     """Bir sənəd: (çıxış adı və ya None, mətn və ya atılma səbəbi, band-lar)."""
     t, url = item
     o = _OPT
-    t = T.normalize((t or "")).strip()
+    t = (t or "").strip()
+    if o["cyrillic"] and T.is_az_cyrillic(t):     # K10: kiril dövrü nəşrləri latına çevrilir
+        t = T.cyr2lat(t)
+    t = T.normalize(t)
     if o["wiki"]:
         t = T.clean_wiki(t)
     if o["rules"] and o["rules"].get("min_az") is not None:
@@ -155,13 +162,19 @@ def _process(item):
     if o["pii"]:
         t = T.mask_pii(t)
     out = o["label"]
-    if url and o["routes"]:
-        host = (urlparse(url).hostname or "").lower()
-        host = host[4:] if host.startswith("www.") else host
+    if o["routes"]:
+        host = ""
+        if url:
+            host = (urlparse(url).hostname or "").lower()
+            host = host[4:] if host.startswith("www.") else host
         for r in o["routes"]:
-            if any(host == d or host.endswith("." + d) for d in r["domains"]):
-                out = r["label"]
-                break
+            # domen şərti (xəbər saytları) və/və ya uzunluq şərti (K9: uzun sənədlərə əlavə çəki)
+            if r.get("domains") and not any(host == d or host.endswith("." + d) for d in r["domains"]):
+                continue
+            if r.get("min_chars") and len(t) < r["min_chars"]:
+                continue
+            out = r["label"]
+            break
     return out, t, (T.minhash_bands(t) if o["dedup"] else None)
 
 
@@ -219,6 +232,7 @@ def collect(src, text_dir, workers):
     opt = {"label": outs[0]["label"], "min_chars": src.get("min_chars", 200), "rules": rules,
            "wiki": src.get("wiki", "wikipedia" in str(src.get("path", ""))),
            "pii": src.get("pii", True), "dedup": src.get("dedup", True),
+           "cyrillic": src.get("cyrillic", True),
            "routes": src.get("routes") or []}
     writers = {o["label"]: _ShardWriter(os.path.join(text_dir, o["label"])) for o in outs}
     caps = {o["label"]: (o["max_chars"] or float("inf")) for o in outs}

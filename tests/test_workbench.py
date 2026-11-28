@@ -195,19 +195,35 @@ def test_cyrillic_conversion():
     assert not T.is_az_cyrillic("Bakı gözəl şəhərdir. " * 20)
 
 
+def test_homoglyphs():
+    assert T.fix_homoglyphs("USTАDNАMƏ Dеmə bu dünyаdа") == "USTADNAMƏ Demə bu dünyada"
+    ru = "Москва столица России"
+    assert T.fix_homoglyphs(ru) == ru                     # təmiz kiril sözlərə toxunulmur
+    assert T.fix_homoglyphs("Bakı şəhəri") == "Bakı şəhəri"
+
+
 def test_routes_by_domain_and_length():
     from odlar import data as D
     D._init_worker({"label": "veb", "min_chars": 10, "rules": None, "wiki": False, "pii": False,
-                    "dedup": False, "cyrillic": True,
+                    "dedup": False, "cyrillic": True, "drop_meta": "^books$", "keep_frac": 1.0,
                     "routes": [{"label": "xeber", "domains": ["oxu.az"]},
+                               {"label": "bedii", "meta_regex": "Kateqoriya:(Bədii|Folklor)"},
                                {"label": "veb_uzun", "min_chars": 500}]})
     short, long_ = "Qısa mətn burada yazılıb.", "Uzun mətn burada yazılıb. " * 40
-    assert D._process((short, "https://www.oxu.az/x"))[0] == "xeber"
-    assert D._process((long_, "https://news.oxu.az/x"))[0] == "xeber"      # domen birinci yoxlanır
-    assert D._process((long_, "https://blog.example.az/x"))[0] == "veb_uzun"
-    assert D._process((short, None))[0] == "veb"
-    out, t, _ = D._process(("Азәрбајҹан дили гәдим дилдир. Бакы шәһәри. " * 10, None))
+    assert D._process((short, "https://www.oxu.az/x", None))[0] == "xeber"
+    assert D._process((long_, "https://news.oxu.az/x", None))[0] == "xeber"      # ilk uyğun gələn
+    assert D._process((long_, "https://blog.example.az/x", None))[0] == "veb_uzun"
+    assert D._process((short, None, None))[0] == "veb"
+    assert D._process((short, None, "Sərlövhə:X,Kateqoriya:Bədii ədəbiyyat"))[0] == "bedii"
+    assert D._process((short, None, "books"))[1] == "mənbə xaric"
+    out, t, _ = D._process(("Азәрбајҹан дили гәдим дилдир. Бакы шәһәри. " * 10, None, None))
     assert t.startswith("Azərbaycan dili qədim dildir.")
+    # keep_frac: bərabər seçmə təxminən verilən payı saxlayır və təkrarlana biləndir
+    D._OPT["keep_frac"] = 0.3
+    docs = [f"Sənəd nömrəsi {i}, bir az mətn burada." for i in range(4000)]
+    kept = [D._process((d, None, None))[0] is not None for d in docs]
+    assert 0.27 < sum(kept) / len(kept) < 0.33, sum(kept) / len(kept)
+    assert kept == [D._process((d, None, None))[0] is not None for d in docs]
 
 
 # ---------------------------------------------------------------- tokenizer

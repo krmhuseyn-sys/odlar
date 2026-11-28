@@ -29,6 +29,20 @@ def normalize(t):
     return t.translate(_CHAR_MAP)
 
 
+# ---------------------------------------------------------------- qarışıq hərflər
+# Latın sözünün içində kiril "oxşar" hərflər (köçürmə/OCR xətası): "USTАDNАMƏ" (А kirildir).
+# Tokenizer belə sözü qırıqlara bölür. Yalnız həm latın, həm kiril hərfi olan sözlərdə dəyişdirilir.
+_HOMO = str.maketrans({"А": "A", "а": "a", "В": "B", "Е": "E", "е": "e", "К": "K", "М": "M", "Н": "H",
+                       "О": "O", "о": "o", "Р": "P", "р": "p", "С": "C", "с": "c", "Т": "T", "Х": "X",
+                       "х": "x", "у": "y", "і": "i", "І": "I", "Ј": "J", "ј": "j", "һ": "h", "Һ": "H",
+                       "ә": "ə", "Ә": "Ə", "ү": "ü", "Ү": "Ü", "ө": "ö", "Ө": "Ö"})
+_MIXED = re.compile(r"\w*(?:[A-Za-zÇçĞğİıÖöŞşÜüƏə][\u0400-\u04ff]|[\u0400-\u04ff][A-Za-zÇçĞğİıÖöŞşÜüƏə])\w*")
+
+
+def fix_homoglyphs(t):
+    return _MIXED.sub(lambda m: m.group(0).translate(_HOMO), t)
+
+
 # ---------------------------------------------------------------- kiril -> latın (K10)
 # 1958-1991-ci illərin Azərbaycan kiril əlifbası -> 1991-ci il latın əlifbası. Rus alınmalarındakı
 # hərflər (я, ю, ё, ц, щ, ь, ъ, э) ənənəvi yazılışla verilir.

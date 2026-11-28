@@ -17,6 +17,12 @@ Mənbə növləri (config-də data.sources):
       name: azj_Latn
       text_field: text
       url_field: url              # domen bölgüsü üçün
+      meta_field: source          # (istəyə bağlı) routes.meta_regex və drop_meta_regex bu sütuna baxır
+  - type: hf_sentences  Cümlə-cümlə saxlanmış kitablar: ardıcıl cümlələr kitab daxilində parçalara yığılır
+      path: LocalDoc/books_dataset
+      text_field: " Sentence"
+      group_field: " Metadata"    # kitab məlumatı; routes.meta_regex buna baxır (məs. kateqoriya)
+      doc_chars: 20000
   - type: files       Öz faylların (.txt, .md, .pdf, .epub). Bədii kitablar üçün.
       glob: books/**/*.txt
 Hər mənbədə əlavə olaraq:
@@ -29,7 +35,9 @@ Hər mənbədə əlavə olaraq:
       pii: true           # e-poçt və telefonları maskala
       dedup: true         # MinHash dublikat yoxlamasına qatılsın
       tok_weight: 1       # tokenizer nümunəsində əlavə çəki (bədii, Vikipediya üçün > 1)
+      keep_frac: 1.0      # sənədlərin bu payını bərabər seç (hash ilə); routes-da da ayrıca verilə bilər
       cyrillic: true      # Azərbaycan kirilindəki sənədləri latına çevir (K10)
+      drop_meta_regex: "^(books|wikipedia)$"   # meta_field bu ifadəyə uyğundursa, sənəd atılır
       routes:             # ayrı səbətlərə yönəlt; ilk uyğun gələn seçilir
         - label: xeber    # domenə görə (xəbər saytları, payı max_chars ilə məhdud)
           domains: [oxu.az, report.az, apa.az]
@@ -49,6 +57,7 @@ import os
 import re
 import sys
 import time
+import zlib
 from multiprocessing import Pool
 from urllib.parse import urlparse
 
@@ -67,14 +76,36 @@ def _log(*a):
 
 # ---------------------------------------------------------------- mənbələr
 def _iter_hf(src):
+    """(mətn, url, meta). meta_field verilibsə (məs. AzTC-də "source"), routes/drop onunla seçir."""
     from datasets import load_dataset
     kw = {"split": src.get("split", "train"), "streaming": bool(src.get("streaming", False))}
     if src.get("name"):
         kw["name"] = src["name"]
     ds = load_dataset(src["path"], **kw)
-    field, ufield = src.get("text_field", "text"), src.get("url_field", "url")
+    field, ufield, mfield = src.get("text_field", "text"), src.get("url_field", "url"), src.get("meta_field")
     for row in ds:
-        yield row[field], row.get(ufield)
+        yield row[field], row.get(ufield), (row.get(mfield) if mfield else None)
+
+
+def _iter_hf_sentences(src):
+    """Cümlə-cümlə saxlanmış kitablar (məs. LocalDoc/books_dataset): ardıcıl cümlələr eyni
+    group_field (kitab məlumatı) daxilində ~doc_chars simvolluq parçalara yığılır."""
+    from datasets import load_dataset
+    kw = {"split": src.get("split", "train"), "streaming": bool(src.get("streaming", True))}
+    ds = load_dataset(src["path"], **kw)
+    tf, gf, size = src.get("text_field", "text"), src["group_field"], int(src.get("doc_chars", 20000))
+    cur, buf, n = None, [], 0
+    for row in ds:
+        g, t = row.get(gf), (row.get(tf) or "").strip()
+        if g != cur or n >= size:
+            if buf:
+                yield " ".join(buf), None, cur
+            cur, buf, n = g, [], 0
+        if t:
+            buf.append(t)
+            n += len(t) + 1
+    if buf:
+        yield " ".join(buf), None, cur
 
 
 def _read_pdf(path):
@@ -129,7 +160,7 @@ def _iter_files(src):
         except Exception as e:
             _log(f"  oxunmadı: {p} ({e})")
             continue
-        yield re.sub(r"(\w)-\n(\w)", r"\1\2", t), None     # sətir sonu defisi: "Gürcüs-\nki"
+        yield re.sub(r"(\w)-\n(\w)", r"\1\2", t), None, p     # sətir sonu defisi: "Gürcüs-\nki"
 
 
 # ---------------------------------------------------------------- 1) yığım
@@ -141,14 +172,39 @@ def _init_worker(opt):
     _OPT.update(opt)
 
 
+def _route(o, t, url, meta):
+    """Səbət və seçmə payı: domen (xəbər saytları), meta (kitab kateqoriyası, AzTC mənbəsi),
+    uzunluq (K9). İlk uyğun gələn marşrut seçilir; heç biri uyğun deyilsə, əsas səbət."""
+    host = ""
+    if url and o["routes"]:
+        host = (urlparse(url).hostname or "").lower()
+        host = host[4:] if host.startswith("www.") else host
+    for r in o["routes"]:
+        if r.get("domains") and not any(host == d or host.endswith("." + d) for d in r["domains"]):
+            continue
+        if r.get("meta_regex") and not re.search(r["meta_regex"], str(meta or "")):
+            continue
+        if r.get("min_chars") and len(t) < r["min_chars"]:
+            continue
+        return r["label"], r.get("keep_frac", 1.0)
+    return o["label"], o["keep_frac"]
+
+
 def _process(item):
     """Bir sənəd: (çıxış adı və ya None, mətn və ya atılma səbəbi, band-lar)."""
-    t, url = item
+    t, url, meta = item
     o = _OPT
+    if o["drop_meta"] and meta is not None and re.search(o["drop_meta"], str(meta)):
+        return None, "mənbə xaric", None
     t = (t or "").strip()
+    out, keep = _route(o, t, url, meta)
+    # Bərabər seçmə (təmizləmədən əvvəl, vaxta qənaət): mətnin hash-i ilə, təkrarlana bilən;
+    # max_chars yalnız ehtiyat həddidir, ona görə seçim faylın əvvəlinə meyilli olmur
+    if keep < 1.0 and zlib.crc32(t[:2000].encode("utf-8", "replace")) / 2**32 >= keep:
+        return None, "seçmə", None
     if o["cyrillic"] and T.is_az_cyrillic(t):     # K10: kiril dövrü nəşrləri latına çevrilir
         t = T.cyr2lat(t)
-    t = T.normalize(t)
+    t = T.fix_homoglyphs(T.normalize(t))
     if o["wiki"]:
         t = T.clean_wiki(t)
     if o["rules"] and o["rules"].get("min_az") is not None:
@@ -161,20 +217,6 @@ def _process(item):
             return None, why, None
     if o["pii"]:
         t = T.mask_pii(t)
-    out = o["label"]
-    if o["routes"]:
-        host = ""
-        if url:
-            host = (urlparse(url).hostname or "").lower()
-            host = host[4:] if host.startswith("www.") else host
-        for r in o["routes"]:
-            # domen şərti (xəbər saytları) və/və ya uzunluq şərti (K9: uzun sənədlərə əlavə çəki)
-            if r.get("domains") and not any(host == d or host.endswith("." + d) for d in r["domains"]):
-                continue
-            if r.get("min_chars") and len(t) < r["min_chars"]:
-                continue
-            out = r["label"]
-            break
     return out, t, (T.minhash_bands(t) if o["dedup"] else None)
 
 
@@ -232,13 +274,14 @@ def collect(src, text_dir, workers):
     opt = {"label": outs[0]["label"], "min_chars": src.get("min_chars", 200), "rules": rules,
            "wiki": src.get("wiki", "wikipedia" in str(src.get("path", ""))),
            "pii": src.get("pii", True), "dedup": src.get("dedup", True),
-           "cyrillic": src.get("cyrillic", True),
+           "cyrillic": src.get("cyrillic", True), "drop_meta": src.get("drop_meta_regex"),
+           "keep_frac": float(src.get("keep_frac", 1.0)),
            "routes": src.get("routes") or []}
     writers = {o["label"]: _ShardWriter(os.path.join(text_dir, o["label"])) for o in outs}
     caps = {o["label"]: (o["max_chars"] or float("inf")) for o in outs}
     chars = {o["label"]: 0 for o in outs}
     dropped, seen, t0 = {}, 0, time.time()
-    it = {"hf": _iter_hf, "files": _iter_files}[src["type"]](src)
+    it = {"hf": _iter_hf, "hf_sentences": _iter_hf_sentences, "files": _iter_files}[src["type"]](src)
     main = outs[0]["label"]
     finite = [k for k in caps if caps[k] < float("inf")]
     step = 1000 * workers

@@ -140,7 +140,7 @@ Eyni config (`sinaq_t4x2.yaml`), eyni kod (validasiya artıq sənəd daxilində 
 
 ## Açıq qalanlar (növbəti addımlar)
 
-- **Pilot (28 noyabr gecəsi):** toxum 1337 Colab-da (`tools/pilot.sh`), toxum 2 və 3 Kaggle-ın iki GPU-sunda paralel (`tools/pilot_seeds.sh`). Data hər iki platformada eyni koddan və eyni axından hazırlanır.
+- **Pilot:** bitdi, nəticə `results/pilot.md`-də. Sənəd maskası və WSD qəbul olundu.
 - **Hub-a real yükləmə və tarixçə sıxılması:** Kərəmin fine-grained token-i ilə sınanmalıdır (K13).
 - **Uzun sənəd çəkisi (K9) və kiril dövrü kitabların çevrilməsi (K10):** 1-ci mərhələdə, data v1 ilə.
 - **Saytdakı köhnə `odlar15.onnx`:** brauzer keşindəki köhnə JS üçün saxlanılıb. Bir həftə sonra silinə bilər.

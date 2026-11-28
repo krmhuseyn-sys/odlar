@@ -81,6 +81,8 @@ def _iter_hf(src):
     kw = {"split": src.get("split", "train"), "streaming": bool(src.get("streaming", False))}
     if src.get("name"):
         kw["name"] = src["name"]
+    if src.get("data_files"):                 # yalnız lazımi fayllar (məs. korpusun OSCAR hissəsi)
+        kw["data_files"] = src["data_files"]
     ds = load_dataset(src["path"], **kw)
     field, ufield, mfield = src.get("text_field", "text"), src.get("url_field", "url"), src.get("meta_field")
     for row in ds:

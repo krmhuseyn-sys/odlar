@@ -166,6 +166,15 @@ def test_quality_rules():
     assert T.quality("Menyu\nƏsas səhifə\nXəbərlər\n" * 10 + "Qısa mətn burada.", R) == "təkrar sətir"
 
 
+def test_oov_filter():
+    clean = "Azərbaycan Respublikası Cənubi Qafqazda yerləşən dövlətdir. Paytaxtı Bakı şəhəridir. " * 5
+    ocr = "Təbiot qanunu ilə covanə arvadlann cümo fıituhatı məhz dilborlik zoforino münhosirdir. " * 5
+    assert T.oov_share(clean) < 0.05 and T.oov_share(ocr) > 0.3
+    R = {**T.DEFAULT_RULES, "max_oov": 0.12}
+    assert T.quality(clean, R) is None and T.quality(ocr, R) == "OCR"
+    assert T.az_lower("IŞIQ İNSAN") == "ışıq insan"
+
+
 def test_foreign_lines_stripped():
     t = "Bakı gözəl şəhərdir və çox qədimdir.\nЭто русский текст, который надо удалить отсюда.\nSon sətir burada."
     assert T.strip_foreign_lines(t) == "Bakı gözəl şəhərdir və çox qədimdir.\nSon sətir burada."

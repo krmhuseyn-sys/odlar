@@ -21,45 +21,108 @@ data:
   tok_train_chars: 1000000000
   split_digits: true          # hər rəqəm ayrıca token
   val_frac: 0.01
-  val_max_tokens: 2000000     # hər mənbədən validasiyaya ən çox bu qədər token
+  val_max_tokens: 2000000     # hər səbətdən validasiyaya ən çox bu qədər token
   hub_dataset: krmhus/odlar-2-data   # hazır tokenlər (gizli); təlim sessiyası buradan endirir
-  sources:                    # sıra önəmlidir: dublikatda əvvəlki mənbə saxlanır
-    - type: files
-      label: bedii
-      glob: books/**/*
-      min_chars: 1000
+  workers: 4
+  # data v1 (28 noyabr). Hədəf: bir epoxada ~9.5 mlrd simvol (~2.2 mlrd token, 4.3 simvol/token).
+  # Həcmlər ölçülüb: AzTC-full və kitablar tam oxunub, FineWeb-2 nümunədən (results/data_v1.md).
+  # Sıra önəmlidir: dublikatda əvvəlki mənbə saxlanır (bədii -> kitab -> Vikipediya -> AzTC -> veb).
+  sources:
+    - type: hf                 # Vikimənbə: klassiklər, dastanlar, şeir (30.8M simvol)
+      label: bedii_vm
+      path: wikimedia/wikisource
+      name: 20231201.az
+      meta_field: title
+      min_chars: 300
+      filter: {max_dup_lines: 0.5}   # şeirlərdə nəqarət çox olur
       repeat: 4
       tok_weight: 2
+      routes:
+        - label: din           # Bibliya tərcüməsi bədii səbətə düşməsin
+          meta_regex: "^Bibliya"
+          repeat: 1
+        - label: vm_diger      # nitqlər, rəsmi sənədlər: bədii deyil
+          meta_regex: "Əliyev|Prezident|Konstitusiya|Qanun|Fərman|Sərəncam"
+          repeat: 1
+    - type: hf_sentences       # 2764 kitab, 1.03 mlrd simvol (CC BY-NC: model qeyri-kommersiya qalır)
+      label: kitab
+      path: LocalDoc/books_dataset
+      text_field: " Sentence"
+      group_field: " Metadata"
+      doc_chars: 20000
+      min_chars: 1000
+      # OCR zədəsi: tanınmayan söz payı > 0.12 olan 20k simvolluq parçalar atılır (~8%; results/data_v1.md)
+      filter: {max_oov: 0.12}
+      repeat: 1
+      routes:
+        - label: bedii         # bədii ədəbiyyat 47M + folklor 33M simvol
+          meta_regex: "Kateqoriya:(Bədii ədəbiyyat|Folklor)"
+          repeat: 4
+          tok_weight: 2
+        - label: kitab_dil     # ədəbiyyatşünaslıq və dilçilik 75M: zəngin dil, sitatlar
+          meta_regex: "Kateqoriya:(Ədəbiyyatşünaslıq|Dilçilik)"
+          repeat: 2
+        - label: kitab_siyasi  # siyasət 227M (o cümlədən nitq topluları): yarısı
+          meta_regex: "Kateqoriya:Siyasət|Müəllif:Əliyev (İlham|Heydər)"
+          keep_frac: 0.5
     - type: hf
       label: vikipediya
       path: wikimedia/wikipedia
       name: 20231101.az
       streaming: true
-      max_chars: 300000000
-      min_chars: 200
+      max_chars: 400000000
       # 0.15 həddi 16 621 məqalədən 72-ni atırdı, çoxu cədvəlli normal məqalə (şəhər, idmançı);
       # 0.25-də 15 qalır (27 noyabr ölçüsü)
       filter: {max_digit: 0.25}
       repeat: 2
       tok_weight: 1.5
-    - type: hf
+    - type: hf                 # AzTC-full: 7.5 mlrd simvol, ~80%-i xəbər/mətbuat arxivi
+      label: xeber_aztc
+      path: LocalDoc/AzTC-full
+      streaming: true
+      meta_field: source
+      drop_meta_regex: "^(books|wikipedia)$"   # kitablar və Vikipediya ayrıca götürülür
+      keep_frac: 0.17          # xəbər ~5.5 mlrd simvoldan ~0.9 mlrd
+      max_chars: 1000000000
+      routes:
+        - label: qanun         # qanunvericilik 409M: yarısı
+          meta_regex: "^legislation$"
+          keep_frac: 0.5
+        - label: aztc_diger    # mədəniyyət, təhsil, din portalları 247M
+          meta_regex: "^(medeniyyet|tehsil|muselmanlar)$"
+    - type: hf                 # FineWeb-2: ~25 mlrd simvol; nümunədə xəbər 44%, uzun 27%, qalan 29%
       label: veb
       path: HuggingFaceFW/fineweb-2
       name: azj_Latn
       streaming: true
-      max_chars: 2000000000
       min_chars: 300
+      keep_frac: 0.36          # ~2.6 mlrd simvol
+      max_chars: 3000000000
       # Xəbər saytları ayrı səbətdə, payı max_chars ilə məhdud (plan: <= 20%). 27 noyabr ölçüsü:
-      # FineWeb-2-nin ilk 6000 sənədinin ~55%-i bu domenlərdəndir. Siyahı o nümunənin URL
-      # statistikasındandır; 1-ci mərhələdə tam data üzrə yoxlanacaq.
+      # FineWeb-2-nin ilk 6000 sənədinin ~55%-i bu domenlərdəndir.
       routes:
         - label: xeber
-          max_chars: 500000000
+          keep_frac: 0.09      # ~1.0 mlrd simvol
+          max_chars: 1100000000
           domains: [publika.az, azadliq.org, amerikaninsesi.org, report.az, metbuat.az, azertag.az,
                     azadliq.az, sizinyol.com, trend.az, yenicag.az, 24saat.org, sia.az, habermonitor.com,
                     turaninfo.az, sumqayitxeber.com, fins.az, musavat.az, musavat.com, milli.az,
                     bizimxeber.az, ekspress.az, aznews.az, movqe.az, teleqraf.com, kaspi.az, sputnik.az,
                     oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az]
+        - label: veb_uzun      # K9: >= 8000 simvol; sayca 3%, həcmcə 27%; iki dəfə təkrar
+          min_chars: 8000
+          keep_frac: 0.09      # ~0.6 mlrd unikal
+          repeat: 2
+    - type: hf                 # OSCAR (keyfiyyət balı >= 2.5), LocalDoc-un birləşdirilmiş korpusundan
+      label: oscar
+      path: LocalDoc/azerbaijani-pretrain-corpus
+      streaming: true
+      # OSCAR sətirləri 24-38-ci fayllardadır (parquet statistikası, 28 noyabr): AzTC hissəsi endirilmir
+      data_files: ["data/train-0002[4-9]-of-00039.parquet", "data/train-0003[0-8]-of-00039.parquet"]
+      meta_field: source
+      drop_meta_regex: "^aztc$"   # 24-cü faylda AzTC sətirləri də var
+      keep_frac: 0.23          # ~6.4 mlrd simvoldan ~1.5 mlrd; FineWeb ilə üst-üstə düşənlər MinHash ilə gedir
+      max_chars: 1700000000
 train:
   # 27 noyabr Colab T4 ölçüsü (tools/gpu_probe.py, fp16): batch 8 -> 8.4 GiB, 16.4k token/san;
   # batch 12 -> 11.8 GiB, 16.3k; batch 16 yaddaşa sığmır. Sürət batch 8-də platoya çatır.

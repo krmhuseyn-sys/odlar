@@ -107,6 +107,36 @@ def mask_pii(t):
     return _PHONE.sub("[telefon]", t)
 
 
+# ---------------------------------------------------------------- tanınmayan söz payı (OCR)
+# Lüğət: Azərbaycan Vikipediyası (2023-11) və Vikimənbəsində ən azı 3 dəfə keçən 446 787 söz forması
+# (az_vocab.txt.gz). Kök sözlər yox, şəkilçili formalar: dil aqqlütinativdir.
+_WORDS = re.compile(r"[A-Za-zÇçƏəĞğİıÖöŞşÜü]+")
+_VOCAB = None
+
+
+def _vocab():
+    global _VOCAB
+    if _VOCAB is None:
+        import gzip
+        import os
+        p = os.path.join(os.path.dirname(__file__), "az_vocab.txt.gz")
+        with gzip.open(p, "rt", encoding="utf-8") as f:
+            _VOCAB = set(f.read().split("\n"))
+    return _VOCAB
+
+
+def az_lower(w):
+    return w.replace("I", "ı").replace("İ", "i").lower()
+
+
+def oov_share(t):
+    """Lüğətdə olmayan sözlərin payı (2+ hərfli sözlər). OCR zədəsini tutur: 28 noyabr ölçüsü —
+    təmiz vebdə median 0.026, kitab parçalarında 0.052; "e"->"o" OCR xətalı parçalarda 0.35-0.45."""
+    v = _vocab()
+    ws = [az_lower(w) for w in _WORDS.findall(t) if len(w) >= 2]
+    return sum(w not in v for w in ws) / max(1, len(ws))
+
+
 # ---------------------------------------------------------------- keyfiyyət filtrləri
 _AZ_LETTERS = set("abcçdeəfgğhxıijkqlmnoöprsştuüvyzABCÇDEƏFGĞHXIİJKQLMNOÖPRSŞTUÜVYZ")
 
@@ -154,6 +184,8 @@ def quality(t, rules):
                 seen.add(ln)
             if dup / max(1, sum(map(len, lines))) > rules["max_dup_lines"]:
                 return "təkrar sətir"
+    if rules.get("max_oov") is not None and oov_share(t) > rules["max_oov"]:
+        return "OCR"
     if rules.get("word_len"):
         words = t.split()
         if words:

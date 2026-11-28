@@ -1,7 +1,7 @@
 # Odlar-2 (QARALAMA, hələ öyrədilməyib). 109.5M parametr, Llama quruluşu, kontekst 1024.
 # Tam plan: "Odlar-2: təlim planı" sənədi.
-# Mənbə siyahısı və həcmlər 1-ci mərhələdə (data v1) dəqiqləşir: HPLT, OSCAR (bal >= 2.5), kitablar,
-# bloqlar əlavə olunacaq, xəbər domenlərinin siyahısı FineWeb-2-nin URL statistikasından çıxarılacaq.
+# Data v1 (results/data_v1.md, 28 noyabr): qumar spamı, maşın tərcüməli saytlar və kitablarda iki
+# sütunun qarışması filtrlənir; OSCAR çıxarılıb. Epoxa ~8.4 mlrd simvol (~1.96 mlrd token), xəbər ~18.5%.
 # Sənəd maskası və WSD pilotda seçildi (results/pilot.md, 28 noyabr).
 # Təxmini vaxt (ölçülüb): Kaggle T4x2-də ~24 saat + sənəd maskası ~3 saat; bir T4-də ~41+5 saat.
 # Kaggle-da interaktiv sessiya ilə başlat; təlim gedən taba toxunma (results/pilot.md).
@@ -24,9 +24,9 @@ data:
   val_max_tokens: 2000000     # hər səbətdən validasiyaya ən çox bu qədər token
   hub_dataset: krmhus/odlar-2-data   # hazır tokenlər (gizli); təlim sessiyası buradan endirir
   workers: 4
-  # data v1 (28 noyabr). Hədəf: bir epoxada ~9.5 mlrd simvol (~2.2 mlrd token, 4.3 simvol/token).
-  # Həcmlər ölçülüb: AzTC-full və kitablar tam oxunub, FineWeb-2 nümunədən (results/data_v1.md).
-  # Sıra önəmlidir: dublikatda əvvəlki mənbə saxlanır (bədii -> kitab -> Vikipediya -> AzTC -> veb).
+  # data v1 (28 noyabr): bir epoxada ~8.4 mlrd simvol (~1.96 mlrd token, 4.3 simvol/token); 33 500
+  # addım ~1.15 epoxadır. AzTC-full və kitablar tam oxunub, FineWeb-2 nümunədən (results/data_v1.md).
+  # Sıra önəmlidir: dublikatda əvvəlki mənbə saxlanır (Vikimənbə -> kitab -> Vikipediya -> AzTC -> veb).
   sources:
     - type: hf                 # Vikimənbə: klassiklər, dastanlar, şeir (30.8M simvol)
       label: bedii_vm
@@ -52,7 +52,8 @@ data:
       doc_chars: 20000
       min_chars: 1000
       # OCR zədəsi: tanınmayan söz payı > 0.12 olan 20k simvolluq parçalar atılır (~8%; results/data_v1.md)
-      filter: {max_oov: 0.12}
+      # İki sütunlu səhifələrin qarışması (results/data_v1.md): 1000 sözə 0.5-dən çox "sütun izi"
+      filter: {max_oov: 0.12, max_joints: 0.5}
       repeat: 1
       routes:
         - label: bedii         # bədii ədəbiyyat 47M + folklor 33M simvol
@@ -82,47 +83,50 @@ data:
       streaming: true
       meta_field: source
       drop_meta_regex: "^(books|wikipedia)$"   # kitablar və Vikipediya ayrıca götürülür
-      keep_frac: 0.17          # xəbər ~5.5 mlrd simvoldan ~0.9 mlrd
-      max_chars: 1000000000
+      keep_frac: 0.13          # xəbər ~5.5 mlrd simvoldan ~0.7 mlrd (xəbər cəmi <= 20%)
+      max_chars: 750000000
       routes:
         - label: qanun         # qanunvericilik 409M: yarısı
           meta_regex: "^legislation$"
           keep_frac: 0.5
         - label: aztc_diger    # mədəniyyət, təhsil, din portalları 247M
           meta_regex: "^(medeniyyet|tehsil|muselmanlar)$"
-    - type: hf                 # FineWeb-2: ~25 mlrd simvol; nümunədə xəbər 44%, uzun 27%, qalan 29%
+    - type: hf                 # FineWeb-2 azj: 7.29M sənəd, ~26 mlrd simvol (results/data_v1.md)
       label: veb
       path: HuggingFaceFW/fineweb-2
       name: azj_Latn
       streaming: true
       min_chars: 300
-      keep_frac: 0.36          # ~2.6 mlrd simvol
-      max_chars: 3000000000
-      # Xəbər saytları ayrı səbətdə, payı max_chars ilə məhdud (plan: <= 20%). 27 noyabr ölçüsü:
-      # FineWeb-2-nin ilk 6000 sənədinin ~55%-i bu domenlərdəndir.
+      # Simvol payları (28 noyabr, 12 sətir qrupu, 46k sənəd): xəbər 23%, uzun 57%, qalan 20%.
+      # Qumar spamı (DEFAULT_RULES max_gambling): uzunların 80%-i, qalanın 25%-i, xəbərin 7%-i.
+      # Xarici saytların maşın tərcüməli "az." alt domenləri (az.xxx.pt, az.xxx.com): qalanın 13%-i.
+      drop_domain_regex: "^az\\.(?!armradio\\.am$|ambafrance\\.org$)[^.]+\\.(?!az$)[a-z.]+$"
+      keep_frac: 1.0           # spamsız qalan ~3 mlrd simvolun hamısı
+      max_chars: 3500000000
       routes:
         - label: xeber
-          keep_frac: 0.09      # ~1.0 mlrd simvol
-          max_chars: 1100000000
+          keep_frac: 0.15      # ~6 mlrd simvoldan ~0.85 mlrd
+          max_chars: 900000000
+          domain_regex: "(xeber|xəbər|xaber|news|press|info|media|qazet|gazet|\\.tv$|tv\\.|sport|radio|post|report|fakt|agentlik|times|journal|jurnal|daily|ekspres|az24|24\\.az)"
+          domain_exclude_regex: "forum"
           domains: [publika.az, azadliq.org, amerikaninsesi.org, report.az, metbuat.az, azertag.az,
                     azadliq.az, sizinyol.com, trend.az, yenicag.az, 24saat.org, sia.az, habermonitor.com,
                     turaninfo.az, sumqayitxeber.com, fins.az, musavat.az, musavat.com, milli.az,
                     bizimxeber.az, ekspress.az, aznews.az, movqe.az, teleqraf.com, kaspi.az, sputnik.az,
-                    oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az]
-        - label: veb_uzun      # K9: >= 8000 simvol; sayca 3%, həcmcə 27%; iki dəfə təkrar
+                    oxu.az, apa.az, qafqazinfo.az, axar.az, modern.az, day.az, 1news.az, haqqin.az,
+                    lent.az, azvision.az, yeniavaz.com, unikal.org, xalqcebhesi.az, fed.az, ordu.az,
+                    meydan.tv, az.armradio.am, muxalifet.az, banker.az, pia.az, femida.az, baku.ws,
+                    salamnews.org, adalet.az, big.az, tia.az, redaktor.az, fanat.az, versus.az,
+                    hurriyyet.org, hafta.az, komanda.az, sherg.az, olaylar.az, xural.com, turkustan.info,
+                    azedu.az, avtosfer.az, vergiler.az, technote.az, kulis.az, ayna.az, konkret.az,
+                    yap.org.az, president.az, yeniazerbaycan.com, novator.az, sfera.az, ikisahil.az,
+                    1905.az, editor.az, anl.az, yenigundem.az, ucnoqta.az, trt.net.tr, bbc.com,
+                    azerbaycan24.com, minval.info, jam-news.net]
+        - label: veb_uzun      # K9: >= 8000 simvol; spamdan sonra ~2 mlrd simvol, təkrarsız
           min_chars: 8000
-          keep_frac: 0.09      # ~0.6 mlrd unikal
-          repeat: 2
-    - type: hf                 # OSCAR (keyfiyyət balı >= 2.5), LocalDoc-un birləşdirilmiş korpusundan
-      label: oscar
-      path: LocalDoc/azerbaijani-pretrain-corpus
-      streaming: true
-      # OSCAR sətirləri 24-38-ci fayllardadır (parquet statistikası, 28 noyabr): AzTC hissəsi endirilmir
-      data_files: ["data/train-0002[4-9]-of-00039.parquet", "data/train-0003[0-8]-of-00039.parquet"]
-      meta_field: source
-      drop_meta_regex: "^aztc$"   # 24-cü faylda AzTC sətirləri də var
-      keep_frac: 0.23          # ~6.4 mlrd simvoldan ~1.5 mlrd; FineWeb ilə üst-üstə düşənlər MinHash ilə gedir
-      max_chars: 1700000000
+          max_chars: 2500000000
+    # OSCAR çıxarıldı (28 noyabr): URL yoxdur, xəbər payını idarə etmək olmur; FineWeb-2 ilə eyni
+    # Common Crawl mənbəyidir və spamdan təmizlənmiş FineWeb-2 həcmi kifayət edir.
 train:
   # 27 noyabr Colab T4 ölçüsü (tools/gpu_probe.py, fp16): batch 8 -> 8.4 GiB, 16.4k token/san;
   # batch 12 -> 11.8 GiB, 16.3k; batch 16 yaddaşa sığmır. Sürət batch 8-də platoya çatır.

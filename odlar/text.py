@@ -137,6 +137,47 @@ def oov_share(t):
     return sum(w not in v for w in ws) / max(1, len(ws))
 
 
+def column_joints(t, win=30):
+    """İki sütunlu PDF-dən çıxarılmış mətnin izi (1000 sözə düşən say). Sütunlar sətir-sətir
+    qarışanda sətir sonunda defislə bölünmüş söz o biri sütunun sözü ilə birləşir: "Azər-" +
+    "ideyaları" -> "azərideyaları", qalan "baycanda" bir neçə söz sonra tək qalır. Axtarılan:
+    lüğətdə olmayan m = p + r (r lüğətdə var) və yaxında elə f ki, p + f lüğətdədir.
+    28 noyabr ölçüsü: Vikipediya, veb, xəbər, OSCAR, Vikimənbədə 5 000+ sənəddə p99 = 0;
+    kitab parçalarında 1-dən yuxarı 15-54% (results/data_v1.md)."""
+    v = _vocab()
+    ws = [az_lower(w) for w in _LETTER_WORDS.findall(t)]
+    hits = 0
+    for i, m in enumerate(ws):
+        if len(m) < 6 or m in v:
+            continue
+        nxt = [f for f in ws[i + 1:i + 1 + win] if len(f) >= 2 and f not in v]
+        if not nxt:
+            continue
+        for k in range(3, len(m) - 1):
+            p, r = m[:k], m[k:]
+            if r in v and any(p + f in v for f in nxt):
+                hits += 1
+                break
+    return hits * 1000 / max(1, len(ws))
+
+
+_LETTER_WORDS = re.compile(r"[^\W\d_]+")
+
+# Qumar SEO spamı: FineWeb-2 azj-də uzun (8000+ simvol) xəbər olmayan səhifələrin ~80%-i, qalan
+# vebin ~25%-i (28 noyabr ölçüsü, results/data_v1.md). Söz əvvəlinə bağlıdır: "mübahisə" tutulmur.
+_GAMBLING = re.compile(r"\b(1x ?bet|mostbet|pin-?up|melbet|betwinner|1win|parimatch|vavada|"
+                       r"aviator oyun|kazino|casino|bukmeker|bahis|slot (?:oyun|maşın)|poker|jackpot|"
+                       r"fribet|freespin|mərc(?:lər\w*|ə|də|dən)?\b)", re.I)
+# Vikipediya/Vikimənbə yoxlaması (28 noyabr): "mərcan", "mərci" (paxla), "rulet" (yemək), kompüter
+# "slot"-u əvvəlki ifadəyə düşürdü; indi söz sonu və birləşmələrlə məhdudlaşdırılıb.
+
+
+def gambling_rate(t):
+    """(tapılan qumar sözlərinin sayı, 1000 sözə düşən say)."""
+    n = len(_GAMBLING.findall(t))
+    return n, n * 1000 / max(1, len(t.split()))
+
+
 # ---------------------------------------------------------------- keyfiyyət filtrləri
 _AZ_LETTERS = set("abcçdeəfgğhxıijkqlmnoöprsştuüvyzABCÇDEƏFGĞHXIİJKQLMNOÖPRSŞTUÜVYZ")
 
@@ -186,6 +227,12 @@ def quality(t, rules):
                 return "təkrar sətir"
     if rules.get("max_oov") is not None and oov_share(t) > rules["max_oov"]:
         return "OCR"
+    if rules.get("max_gambling") is not None:
+        n, rate = gambling_rate(t)
+        if n >= 3 and rate > rules["max_gambling"]:
+            return "qumar"
+    if rules.get("max_joints") is not None and column_joints(t) > rules["max_joints"]:
+        return "sütun"
     if rules.get("word_len"):
         words = t.split()
         if words:
@@ -197,7 +244,7 @@ def quality(t, rules):
 
 
 DEFAULT_RULES = {"max_digit": 0.15, "max_dup_lines": 0.20, "word_len": [3, 12], "min_az": 0.80,
-                 "min_schwa": 0.015}
+                 "min_schwa": 0.015, "max_gambling": 3}
 
 
 # ---------------------------------------------------------------- MinHash (oxşar dublikat)

@@ -58,7 +58,7 @@ import re
 import sys
 import time
 import zlib
-from multiprocessing import Pool
+from multiprocessing import Pool, get_context
 from urllib.parse import urlparse
 
 import numpy as np
@@ -174,16 +174,23 @@ def _init_worker(opt):
     _OPT.update(opt)
 
 
+def _host(url):
+    h = (urlparse(url).hostname or "").lower()
+    return h[4:] if h.startswith("www.") else h
+
+
 def _route(o, t, url, meta):
     """Səbət və seçmə payı: domen (xəbər saytları), meta (kitab kateqoriyası, AzTC mənbəsi),
     uzunluq (K9). İlk uyğun gələn marşrut seçilir; heç biri uyğun deyilsə, əsas səbət."""
-    host = ""
-    if url and o["routes"]:
-        host = (urlparse(url).hostname or "").lower()
-        host = host[4:] if host.startswith("www.") else host
+    host = _host(url) if url and o["routes"] else ""
     for r in o["routes"]:
-        if r.get("domains") and not any(host == d or host.endswith("." + d) for d in r["domains"]):
-            continue
+        if r.get("domains") or r.get("domain_regex"):
+            hit = any(host == d or host.endswith("." + d) for d in r.get("domains") or [])
+            if not hit and r.get("domain_regex"):
+                hit = bool(re.search(r["domain_regex"], host)) and not (
+                    r.get("domain_exclude_regex") and re.search(r["domain_exclude_regex"], host))
+            if not hit:
+                continue
         if r.get("meta_regex") and not re.search(r["meta_regex"], str(meta or "")):
             continue
         if r.get("min_chars") and len(t) < r["min_chars"]:
@@ -192,18 +199,33 @@ def _route(o, t, url, meta):
     return o["label"], o["keep_frac"]
 
 
-def _process(item):
-    """Bir sənəd: (çıxış adı və ya None, mətn və ya atılma səbəbi, band-lar)."""
+def _select(o, item):
+    """Marşrut və seçmə (əsas prosesdə, ucuz): (səbət, mətn) və ya (None, atılma səbəbi).
+    Atılan sənədlər köməkçi proseslərə ümumiyyətlə göndərilmir."""
     t, url, meta = item
-    o = _OPT
     if o["drop_meta"] and meta is not None and re.search(o["drop_meta"], str(meta)):
-        return None, "mənbə xaric", None
+        return None, "mənbə xaric"
     t = (t or "").strip()
+    if o.get("drop_domain") and url and re.search(o["drop_domain"], _host(url)):
+        return None, "domen xaric"
     out, keep = _route(o, t, url, meta)
-    # Bərabər seçmə (təmizləmədən əvvəl, vaxta qənaət): mətnin hash-i ilə, təkrarlana bilən;
+    # Bərabər seçmə: mətnin hash-i ilə, təkrarlana bilən, bütün mənbə boyu eyni nisbətdə;
     # max_chars yalnız ehtiyat həddidir, ona görə seçim faylın əvvəlinə meyilli olmur
     if keep < 1.0 and zlib.crc32(t[:2000].encode("utf-8", "replace")) / 2**32 >= keep:
-        return None, "seçmə", None
+        return None, "seçmə"
+    return out, t
+
+
+def _process(item):
+    """Bir sənəd: (çıxış adı və ya None, mətn və ya atılma səbəbi, band-lar).
+    item: (mətn, url, meta) və ya artıq seçilmiş (səbət, mətn)."""
+    o = _OPT
+    if len(item) == 3:
+        out, t = _select(o, item)
+        if out is None:
+            return None, t, None
+    else:
+        out, t = item
     if o["cyrillic"] and T.is_az_cyrillic(t):     # K10: kiril dövrü nəşrləri latına çevrilir
         t = T.cyr2lat(t)
     t = T.fix_homoglyphs(T.normalize(t))
@@ -277,6 +299,7 @@ def collect(src, text_dir, workers):
            "wiki": src.get("wiki", "wikipedia" in str(src.get("path", ""))),
            "pii": src.get("pii", True), "dedup": src.get("dedup", True),
            "cyrillic": src.get("cyrillic", True), "drop_meta": src.get("drop_meta_regex"),
+           "drop_domain": src.get("drop_domain_regex"),
            "keep_frac": float(src.get("keep_frac", 1.0)),
            "routes": src.get("routes") or []}
     writers = {o["label"]: _ShardWriter(os.path.join(text_dir, o["label"])) for o in outs}
@@ -286,12 +309,24 @@ def collect(src, text_dir, workers):
     it = {"hf": _iter_hf, "hf_sentences": _iter_hf_sentences, "files": _iter_files}[src["type"]](src)
     main = outs[0]["label"]
     finite = [k for k in caps if caps[k] < float("inf")]
-    step = 1000 * workers
-    with Pool(workers, initializer=_init_worker, initargs=(opt,)) as pool:
+    step = 2000 * workers
+    # spawn: köməkçilər əsas prosesin (əvvəlki mənbələrdən qalmış) yaddaşını kopyalamır
+    with get_context("spawn").Pool(workers, initializer=_init_worker, initargs=(opt,)) as pool:
         while True:
-            chunk = list(itertools.islice(it, step))      # hissə-hissə: RAM-da yalnız bir hissə olur
-            if not chunk:
+            raw = list(itertools.islice(it, step))        # hissə-hissə: RAM-da yalnız bir hissə olur
+            if not raw:
                 break
+            chunk = []
+            for item in raw:                               # seçmə əsas prosesdə: atılan göndərilmir
+                out, t = _select(opt, item)
+                if out is None:
+                    seen += 1
+                    dropped[t] = dropped.get(t, 0) + 1
+                elif chars[out] >= caps[out]:
+                    seen += 1
+                    dropped["limit"] = dropped.get("limit", 0) + 1
+                else:
+                    chunk.append((out, t))
             for out, t, bands in pool.map(_process, chunk, chunksize=64):
                 seen += 1
                 if out is None:
@@ -305,6 +340,8 @@ def collect(src, text_dir, workers):
                  ", ".join(f"{k} {v/1e6:.0f}M simvol" for k, v in chars.items()))
             if main in finite and all(chars[k] >= caps[k] for k in finite):
                 break
+    if hasattr(it, "close"):
+        it.close()                                   # yarımçıq HF axınını bağla
     stats = {}
     for o in outs:
         writers[o["label"]].close()
@@ -589,4 +626,7 @@ if __name__ == "__main__":
     ap.add_argument("--force", action="store_true", help="hazır data olsa da yenidən hazırla")
     a = ap.parse_args()
     prepare(load_config(a.config, a.set), force=a.force)
-    sys.exit(0)
+    # Yarımçıq oxunmuş HF axını (datasets 5.2 + hf-xet) proses çıxışında asılı qalır;
+    # hər şey diskdədir, ona görə birbaşa çıxırıq
+    sys.stdout.flush(); sys.stderr.flush()
+    os._exit(0)

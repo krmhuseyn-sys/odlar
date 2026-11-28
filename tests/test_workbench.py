@@ -235,6 +235,43 @@ def test_routes_by_domain_and_length():
     assert kept == [D._process((d, None, None))[0] is not None for d in docs]
 
 
+
+def test_domain_regex_route():
+    from odlar import data as D
+    o = {"label": "veb", "keep_frac": 1.0,
+         "routes": [{"label": "xeber", "domains": ["oxu.az"], "domain_regex": "(xeber|news|info)",
+                     "domain_exclude_regex": "forum"}]}
+    t = "x" * 300
+    assert D._route(o, t, "https://palitranews.az/a", None)[0] == "xeber"
+    assert D._route(o, t, "https://m.oxu.az/a", None)[0] == "xeber"
+    assert D._route(o, t, "https://azinforum.az/a", None)[0] == "veb"       # forum xəbər deyil
+    assert D._route(o, t, "https://example.az/news", None)[0] == "veb"      # yol yox, yalnız domen
+    assert D._route(o, t, None, None)[0] == "veb"
+    o2 = {**o, "drop_meta": None, "drop_domain": r"^az\.(?!armradio\.am$)[^.]+\.(?!az$)[a-z.]+$"}
+    assert D._select(o2, (t, "https://az.jf-vnsbento.pt/x", None)) == (None, "domen xaric")
+    assert D._select(o2, (t, "https://az.armradio.am/x", None))[0] == "veb"       # istisna: atılmır
+    assert D._select(o2, (t, "https://az.example.az/x", None))[0] == "veb"
+
+
+def test_gambling_filter():
+    spam = "1xBet mobil yükle və kazino bonusu al. Mostbet slot oyunları burada. " * 5
+    news = ("Milli Məclisdə mübahisəli qanun layihəsi müzakirə olundu. Deputatlar mübahisə "
+            "doğuran məsələlərdə razılığa gəlmədilər. " * 10 + "Layihə kazino reklamını qadağan edir.")
+    assert T.quality(spam, T.DEFAULT_RULES) == "qumar"
+    assert T.quality(news, T.DEFAULT_RULES) is None
+
+
+def test_column_joints():
+    clean = ("Böyük şairin yaradıcılığı Azərbaycanda geniş yayılmışdı. Onun ideyaları XX əsrin "
+             "ikinci yarısında böyük rezonans doğurdu və bir çox şairlər bu yolu davam etdirdi. ") * 5
+    # Kitab korpusundan real nümunələr: "ölkələ-|rimiz" və "mütə-|fəkkir" o biri sütunla birləşib
+    mixed = ("Bu gün ölkələmoskvada keçirilən görüşdə rimiz arasında əlaqələr müzakirə olundu. Böyük "
+             "mütəetdi ki, xalqın gələcəyi fəkkir və elm adamlarının əlindədir. ") * 3
+    assert T.column_joints(clean) == 0
+    assert T.column_joints(mixed) > 0.5
+    assert T.quality(mixed, {"max_joints": 0.5}) == "sütun"
+    assert T.quality(clean, {"max_joints": 0.5}) is None
+
 # ---------------------------------------------------------------- tokenizer
 def test_tokenizer_digits_and_specials():
     from odlar.data import build_tokenizer, SPECIAL_TOKENS
